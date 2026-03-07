@@ -44,10 +44,6 @@ def finRevEquiv {m : ℕ} : Fin m ≃ Fin m where
   left_inv := Fin.rev_rev
   right_inv := Fin.rev_rev
 
-/-- finRevEquiv is bijective. -/
-theorem finRevEquiv_bijective {m : ℕ} : Function.Bijective (@finRevEquiv m) :=
-  finRevEquiv.bijective
-
 /-! ## Antidiagonal permutation on a 2D shape
 
 For shape (n, m), the antidiagonal maps (i, j) to (i, m-1-j),
@@ -82,24 +78,9 @@ def antiDiagMultiIndexEquiv (s : Shape 2) : MultiIndex s ≃ MultiIndex s where
 noncomputable def antiDiagGenP (s : Shape 2) : MultiIndex s ≃ FlatIndex s :=
   (antiDiagMultiIndexEquiv s).trans (B s)
 
-/-- The antidiagonal GenP is bijective (automatic from Equiv). -/
-theorem antiDiagGenP_bijective (s : Shape 2) :
-    Function.Bijective (antiDiagGenP s) :=
-  (antiDiagGenP s).bijective
-
-/-- The antidiagonal GenP has a computable inverse. -/
-theorem antiDiagGenP_inverse_roundtrip (s : Shape 2) (mi : MultiIndex s) :
-    (antiDiagGenP s).symm ((antiDiagGenP s) mi) = mi :=
-  (antiDiagGenP s).symm_apply_apply mi
-
 /-- Wrapping antiDiagGenP as a TilePerm for use in OrderBy/GroupBy. -/
 noncomputable def antiDiagTilePerm (s : Shape 2) : TilePerm 2 s :=
   TilePerm.genP (antiDiagGenP s)
-
-/-- The antidiagonal TilePerm is bijective. -/
-theorem antiDiagTilePerm_bijective (s : Shape 2) :
-    Function.Bijective (antiDiagTilePerm s).toEquiv :=
-  (antiDiagTilePerm s).bijective
 
 /-! ## Concrete verification: 3×3 example
 

@@ -1,5 +1,4 @@
 import LegoLean.Basic
-import LegoLean.CanonicalBijection
 import LegoLean.Permutation
 import LegoLean.OrderBy
 import LegoLean.GroupBy

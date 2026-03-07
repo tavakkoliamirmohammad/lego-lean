@@ -66,11 +66,6 @@ noncomputable def OrderBy.toEquiv {d : ℕ} {q : ℕ} (ob : OrderBy d q) :
     ((k : Fin q) → FlatIndex (ob.shapes k)) :=
   Equiv.piCongrRight (fun k => ob.levelEquiv k)
 
-/-- The OrderBy equivalence is bijective (automatic from Equiv). -/
-theorem OrderBy.toEquiv_bijective {d : ℕ} {q : ℕ} (ob : OrderBy d q) :
-    Function.Bijective ob.toEquiv :=
-  ob.toEquiv.bijective
-
 /-- The flattened OrderBy equivalence: from the product of multi-indices
     to a single flat index.
 
@@ -80,10 +75,5 @@ theorem OrderBy.toEquiv_bijective {d : ℕ} {q : ℕ} (ob : OrderBy d q) :
 noncomputable def OrderBy.toFlatEquiv {d : ℕ} {q : ℕ} (ob : OrderBy d q) :
     ((k : Fin q) → MultiIndex (ob.shapes k)) ≃ Fin ob.combinedProd :=
   ob.toEquiv.trans (finPiFinEquiv (n := fun k => Shape.prod (ob.shapes k)))
-
-/-- The flattened OrderBy is bijective. -/
-theorem OrderBy.toFlatEquiv_bijective {d : ℕ} {q : ℕ} (ob : OrderBy d q) :
-    Function.Bijective ob.toFlatEquiv :=
-  ob.toFlatEquiv.bijective
 
 end LegoLean

@@ -17,7 +17,7 @@ the two fundamental permutation constructs in the LEGO algebra.
 - Python source: `class GenP`, `class RegP`
 -/
 
-import LegoLean.CanonicalBijection
+import LegoLean.Basic
 
 namespace LegoLean
 
@@ -28,18 +28,6 @@ namespace LegoLean
     Paper reference: Figure 3, GenP(dims, f, f⁻¹) -/
 def GenP {d : ℕ} (s : Shape d) (e : MultiIndex s ≃ FlatIndex s) :
     MultiIndex s ≃ FlatIndex s := e
-
-/-- GenP is always bijective (trivially, since it's an Equiv). -/
-theorem GenP_bijective {d : ℕ} (s : Shape d) (e : MultiIndex s ≃ FlatIndex s) :
-    Function.Bijective (GenP s e) :=
-  e.bijective
-
-/-- Reindex a multi-index by a permutation on dimensions.
-    If σ permutes dimensions, then (reindexMultiIndex σ mi) k = mi (σ k).
-    This transforms a MultiIndex for shape s into a MultiIndex for shape (s ∘ σ). -/
-def reindexMultiIndex {d : ℕ} {s : Shape d} (σ : Equiv.Perm (Fin d))
-    (mi : MultiIndex s) : MultiIndex (s ∘ σ) :=
-  fun i => mi (σ i)
 
 /-- The reindexing of multi-indices by σ is an equivalence.
     MultiIndex s ≃ MultiIndex (s ∘ σ) -/
@@ -70,11 +58,6 @@ noncomputable def RegP {d : ℕ} (s : Shape d) (σ : Equiv.Perm (Fin d)) :
   let step3 : FlatIndex permutedShape ≃ FlatIndex s :=
     finCongr (Shape.prod_permute s σinv)
   step1.trans (step2.trans step3)
-
-/-- RegP is always bijective (from Equiv composition). -/
-theorem RegP_bijective {d : ℕ} (s : Shape d) (σ : Equiv.Perm (Fin d)) :
-    Function.Bijective (RegP s σ) :=
-  (RegP s σ).bijective
 
 /-- RegP with the identity permutation is equivalent to B. -/
 theorem RegP_id {d : ℕ} (s : Shape d) :

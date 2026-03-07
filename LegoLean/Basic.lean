@@ -57,13 +57,16 @@ theorem Shape.prod_permute {d : ℕ} (s : Shape d) (σ : Equiv.Perm (Fin d)) :
   unfold Shape.prod Shape.permute
   exact Fintype.prod_equiv σ _ _ (fun i => rfl)
 
-/-- Cast a FlatIndex from one shape to another when they have the same product. -/
-def FlatIndex.cast {d : ℕ} {s t : Shape d} (h : s.prod = t.prod)
-    (j : FlatIndex s) : FlatIndex t :=
-  Fin.cast h j
+/-- The canonical bijection B from multi-indices to flat indices.
+    This is the row-major linearization:
+      B(n₁,...,nq)(i₁,...,iq) = i₁·(n₂·...·nq) + ... + iq
 
-/-- Concatenation of two shapes into a combined shape of dimension d₁ + d₂. -/
-def Shape.append {d₁ d₂ : ℕ} (s₁ : Shape d₁) (s₂ : Shape d₂) : Shape (d₁ + d₂) :=
-  Fin.append s₁ s₂
+    We use Mathlib's `finPiFinEquiv` which provides exactly this bijection
+    together with its inverse, bundled as an `Equiv`.
+
+    Note: `finPiFinEquiv` has type `(∀ i : Fin d, Fin (s i)) ≃ Fin (∏ i, s i)`,
+    which is exactly `MultiIndex s ≃ FlatIndex s` after unfolding definitions. -/
+noncomputable def B {d : ℕ} (s : Shape d) : MultiIndex s ≃ FlatIndex s :=
+  (finPiFinEquiv : ((i : Fin d) → Fin (s i)) ≃ Fin (∏ i : Fin d, s i))
 
 end LegoLean
