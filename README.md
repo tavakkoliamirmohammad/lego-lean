@@ -1,4 +1,4 @@
-# LEGO-Lean — Formal Verification of the LEGO Layout Algebra in Lean 4
+# Formal Verification of the LEGO Layout Algebra in Lean 4
 
 Lean 4 formalization of the **LEGO Layout Algebra** from the CGO 2026 paper:
 
