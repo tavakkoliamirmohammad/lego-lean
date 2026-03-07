@@ -15,6 +15,7 @@ the paper's intended semantics.
 
 import LegoLean.MainTheorem
 import LegoLean.Simplification
+import LegoLean.AntiDiagonal
 import Mathlib.Tactic.FinCases
 
 namespace LegoLean.Examples
@@ -164,5 +165,64 @@ example : ¬ InBounds (extShape := shape_6x4)
   intro h
   have := h ⟨1, by omega⟩
   simp at this
+
+/-! ### Example 8: 6×6 matrix with antidiagonal permutation (Figure 6)
+
+A 6×6 matrix tiled into (3×3) blocks of (2×2) tiles.
+- Level 0 (blocks): shape (3, 3), product 9
+- Level 1 (within block): shape (2, 2), product 4
+- Total: 9 * 4 = 36 = 6 * 6
+The block level uses the antidiagonal GenP (column-reversal), making
+the permutation non-trivial. -/
+
+/-- Shape (6, 6): a 6×6 matrix. -/
+def shape_6x6 : Shape 2 := ![6, 6]
+
+/-- The product of shape (6, 6) is 36. -/
+example : Shape.prod shape_6x6 = 36 := by native_decide
+
+/-- Block-level shape (3, 3) for the 6×6 example. -/
+def blockShape_6x6 : Shape 2 := ![3, 3]
+
+/-- Tile-level shape (2, 2) for the 6×6 example. -/
+def tileShape_6x6 : Shape 2 := ![2, 2]
+
+/-- The shapes for the 6×6 two-level tiling. -/
+def shapes_6x6 : Fin 2 → Shape 2 := ![blockShape_6x6, tileShape_6x6]
+
+/-- Tiling sizes match: 3*2 = 6 in each dimension. -/
+example : ∀ i : Fin 2, ∏ k : Fin 2, shapes_6x6 k i = shape_6x6 i := by
+  intro i; fin_cases i <;> native_decide
+
+/-- OrderBy for 6×6: antidiagonal at block level, identity at tile level. -/
+noncomputable def orderBy_6x6 : OrderBy 2 2 where
+  shapes := shapes_6x6
+  perms k := match k with
+    | ⟨0, _⟩ => TilePerm.genP (antiDiagGenP blockShape_6x6)
+    | ⟨1, _⟩ => TilePerm.regP (Equiv.refl (Fin 2))
+
+/-- GroupBy for 6×6. -/
+noncomputable def groupBy_6x6 : GroupBy 2 2 := ⟨orderBy_6x6⟩
+
+/-- The 6×6 layout is bijective. -/
+theorem example_6x6_bijectivity : Function.Bijective groupBy_6x6.toEquiv :=
+  lego_bijectivity 2 2 groupBy_6x6
+
+/-- FullLayout for the 6×6 matrix. -/
+noncomputable def fullLayout_6x6 : FullLayout 2 2 where
+  logicalShape := shape_6x6
+  layout := groupBy_6x6
+  hTiling := by
+    intro i
+    show ∏ k : Fin 2, shapes_6x6 k i = shape_6x6 i
+    fin_cases i <;> native_decide
+
+/-- The 6×6 full layout bijection is bijective. -/
+theorem example_6x6_full_bijectivity : Function.Bijective fullLayout_6x6.toEquiv :=
+  fullLayout_6x6.bijective
+
+/-- The 6×6 full layout permutation is bijective. -/
+theorem example_6x6_perm_bijectivity : Function.Bijective fullLayout_6x6.toPermutation :=
+  fullLayout_6x6.toPermutation.bijective
 
 end LegoLean.Examples
