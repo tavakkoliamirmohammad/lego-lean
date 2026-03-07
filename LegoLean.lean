@@ -1,0 +1,9 @@
+import LegoLean.Basic
+import LegoLean.CanonicalBijection
+import LegoLean.Permutation
+import LegoLean.OrderBy
+import LegoLean.GroupBy
+import LegoLean.ExpandBy
+import LegoLean.Simplification
+import LegoLean.MainTheorem
+import LegoLean.Examples

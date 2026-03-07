@@ -1,0 +1,15 @@
+name = "LegoLean"
+version = "0.1.0"
+keywords = ["math"]
+defaultTargets = ["LegoLean"]
+
+[leanOptions]
+pp.unicode.fun = true
+autoImplicit = false
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+
+[[lean_lib]]
+name = "LegoLean"
