@@ -32,22 +32,28 @@ instance {d : ℕ} {extShape : Shape d} (mi : MultiIndex extShape) (origShape : 
     - origShape: the original data shape (may not be evenly divisible)
     - extShape: the extended shape (evenly divisible by tile sizes)
     - layout: a bijective layout on the extended shape
-    - hExtends: the extended shape is at least as large in every dimension -/
+    - hExtends: the extended shape is at least as large in every dimension
+    - hTiling: the tiling of the extended shape matches the layout's shapes -/
 structure ExpandBy (d : ℕ) (q : ℕ) where
   origShape : Shape d
   extShape : Shape d
   layout : GroupBy d q
   hExtends : ∀ i, origShape i ≤ extShape i
+  hTiling : ∀ i, ∏ k : Fin q, layout.shapes k i = extShape i
 
-/-- The apply function returns Option: None for out-of-bounds indices.
+/-- The apply function: maps a multi-index of the extended shape to a flat index,
+    returning None for out-of-bounds indices.
     This corresponds to the -1 sentinel in the Python implementation. -/
 noncomputable def ExpandBy.apply {d : ℕ} {q : ℕ} (eb : ExpandBy d q)
-    (mi : (k : Fin q) → MultiIndex (eb.layout.shapes k)) : Option (Fin eb.layout.totalElements) :=
-  some (eb.layout.toEquiv mi)
+    (mi : MultiIndex eb.extShape) : Option (Fin eb.layout.totalElements) :=
+  if InBounds mi eb.origShape then
+    some (eb.layout.toEquiv (groupDecomp eb.extShape eb.layout.shapes eb.hTiling mi))
+  else
+    none
 
 /-- The subtype of in-bounds multi-indices for the extended shape. -/
 def ExpandBy.InBoundsSubtype {d : ℕ} {q : ℕ} (eb : ExpandBy d q) :=
-  { mi : (k : Fin q) → MultiIndex (eb.layout.shapes k) // True }  -- mi used as type anchor
+  { mi : MultiIndex eb.extShape // InBounds mi eb.origShape }
 
 /-- The layout restricted to the extended space is always bijective.
     On the full extended space, the layout is a bijection (from GroupBy).

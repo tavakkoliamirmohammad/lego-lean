@@ -100,9 +100,12 @@ example : Shape.prod tileShape = 4 := by native_decide
 Construct a concrete GroupBy and verify its bijectivity theorem type-checks.
 This is the core demonstration: building a layout and getting bijectivity for free. -/
 
+/-- The shapes for the 2-level tiling, defined separately for computability. -/
+def exampleShapes : Fin 2 → Shape 2 := ![blockShape, tileShape]
+
 /-- A concrete OrderBy with 2 levels, each 2-dimensional, using identity permutations. -/
 noncomputable def exampleOrderBy : OrderBy 2 2 where
-  shapes := ![blockShape, tileShape]
+  shapes := exampleShapes
   perms := fun _ => TilePerm.regP (Equiv.refl (Fin 2))
 
 /-- The corresponding GroupBy. -/
@@ -111,5 +114,55 @@ noncomputable def exampleGroupBy : GroupBy 2 2 := ⟨exampleOrderBy⟩
 /-- The main bijectivity theorem applied to our concrete example. -/
 theorem example_bijectivity : Function.Bijective exampleGroupBy.toEquiv :=
   lego_bijectivity 2 2 exampleGroupBy
+
+/-! ### Example 6: FullLayout with group decomposition
+
+Construct a FullLayout for the 6×4 matrix tiled into 2×2 blocks.
+The FullLayout.toEquiv maps logical multi-indices through the
+group decomposition and per-level permutations. -/
+
+/-- A FullLayout for the 6×4 matrix with 2×2 tiling. -/
+noncomputable def exampleFullLayout : FullLayout 2 2 where
+  logicalShape := shape_6x4
+  layout := exampleGroupBy
+  hTiling := by
+    intro i
+    show ∏ k : Fin 2, exampleShapes k i = shape_6x4 i
+    fin_cases i <;> native_decide
+
+/-- The full layout bijection is bijective. -/
+theorem example_full_layout_bijectivity : Function.Bijective exampleFullLayout.toEquiv :=
+  lego_full_layout_bijectivity 2 2 exampleFullLayout
+
+/-- The full layout permutation is bijective. -/
+theorem example_full_layout_perm_bijectivity : Function.Bijective exampleFullLayout.toPermutation :=
+  lego_full_layout_perm_bijectivity 2 2 exampleFullLayout
+
+/-! ### Example 7: ExpandBy with bounds checking
+
+Demonstrate that ExpandBy.apply correctly classifies in-bounds vs out-of-bounds. -/
+
+/-- An ExpandBy for a 5×3 matrix extended to 6×4 with 2×2 tiling. -/
+noncomputable def exampleExpandBy : ExpandBy 2 2 where
+  origShape := ![5, 3]
+  extShape := shape_6x4
+  layout := exampleGroupBy
+  hExtends := by intro i; fin_cases i <;> simp [shape_6x4]
+  hTiling := by
+    intro i
+    show ∏ k : Fin 2, exampleShapes k i = shape_6x4 i
+    fin_cases i <;> native_decide
+
+/-- Index (1, 2) is in bounds for the 5×3 original shape. -/
+example : InBounds (extShape := shape_6x4)
+    (fun i => Fin.mk (![1, 2] i) (by fin_cases i <;> simp [shape_6x4])) ![5, 3] := by
+  intro i; fin_cases i <;> simp
+
+/-- Index (1, 3) is out of bounds for the 5×3 original shape (dim 1: 3 ≥ 3). -/
+example : ¬ InBounds (extShape := shape_6x4)
+    (fun i => Fin.mk (![1, 3] i) (by fin_cases i <;> simp [shape_6x4])) ![5, 3] := by
+  intro h
+  have := h ⟨1, by omega⟩
+  simp at this
 
 end LegoLean.Examples

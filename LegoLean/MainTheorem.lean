@@ -73,4 +73,17 @@ theorem lego_expandby_bijectivity (d q : ℕ) (eb : ExpandBy d q) :
     Function.Bijective eb.layout.toEquiv :=
   eb.layout_bijective
 
+/-- **FullLayout bijectivity:**
+    The full layout bijection from logical multi-indices to flat indices
+    is bijective. -/
+theorem lego_full_layout_bijectivity (d q : ℕ) (fl : FullLayout d q) :
+    Function.Bijective fl.toEquiv :=
+  fl.bijective
+
+/-- **FullLayout permutation bijectivity:**
+    The full layout permutation (Fin n ≃ Fin m) is bijective. -/
+theorem lego_full_layout_perm_bijectivity (d q : ℕ) (fl : FullLayout d q) :
+    Function.Bijective fl.toPermutation :=
+  fl.toPermutation.bijective
+
 end LegoLean

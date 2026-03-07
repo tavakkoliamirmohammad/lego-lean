@@ -55,13 +55,23 @@ theorem GroupBy.bijective {d : ℕ} {q : ℕ} (gb : GroupBy d q) :
     Function.Bijective gb.toEquiv :=
   gb.toEquiv.bijective
 
-/-- GroupBy with matching input/output sizes.
-    When the logical data has `n` elements and the tiled representation also has `n`,
-    we get a bijection Fin n ≃ Fin n, i.e., a permutation on {0,...,n-1}. -/
-noncomputable def GroupBy.toPermutation {d : ℕ} {q : ℕ} (gb : GroupBy d q)
-    (n : ℕ) (hn : gb.totalElements = n) :
-    Fin n ≃ Fin n :=
-  (finCongr hn.symm).trans ((gb.toEquiv.symm).trans (gb.toEquiv.trans (finCongr hn)))
+/-- Per-dimension tiling implies total size equality. -/
+theorem tiling_implies_size {d q : ℕ} {shapes : Fin q → Shape d} {logicalShape : Shape d}
+    (hTiling : ∀ i, ∏ k : Fin q, shapes k i = logicalShape i) :
+    Shape.prod logicalShape = ∏ k : Fin q, Shape.prod (shapes k) := by
+  simp only [Shape.prod]
+  calc ∏ i : Fin d, logicalShape i
+      = ∏ i : Fin d, ∏ k : Fin q, shapes k i := by congr 1; ext i; exact (hTiling i).symm
+    _ = ∏ k : Fin q, ∏ i : Fin d, shapes k i := Finset.prod_comm
+
+/-- The group decomposition: decomposes a logical multi-index into per-level sub-indices.
+    MultiIndex logicalShape ≃ (k : Fin q) → MultiIndex (shapes k) -/
+noncomputable def groupDecomp {d q : ℕ} (logicalShape : Shape d) (shapes : Fin q → Shape d)
+    (hTiling : ∀ i, ∏ k : Fin q, shapes k i = logicalShape i) :
+    MultiIndex logicalShape ≃ ((k : Fin q) → MultiIndex (shapes k)) :=
+  (Equiv.piCongrRight (fun i =>
+    (finCongr (hTiling i).symm).trans (finPiFinEquiv (n := fun k => shapes k i)).symm))
+  |>.trans (Equiv.piComm (fun i k => Fin (shapes k i)))
 
 /-- A full layout expression with an explicit logical shape.
     This connects the programmer's view (a single d-dimensional shape) to the
@@ -69,16 +79,27 @@ noncomputable def GroupBy.toPermutation {d : ℕ} {q : ℕ} (gb : GroupBy d q)
 structure FullLayout (d : ℕ) (q : ℕ) where
   logicalShape : Shape d
   layout : GroupBy d q
-  hSize : Shape.prod logicalShape = layout.totalElements
+  hTiling : ∀ i, ∏ k : Fin q, layout.shapes k i = logicalShape i
 
-/-- The full layout bijection: from logical multi-index to physical flat index. -/
+/-- Derived: total size equality. -/
+theorem FullLayout.hSize {d : ℕ} {q : ℕ} (fl : FullLayout d q) :
+    Shape.prod fl.logicalShape = fl.layout.totalElements :=
+  tiling_implies_size fl.hTiling
+
+/-- The full layout bijection: logical multi-index → physical flat index.
+    Composes: groupDecomp → per-level permutations → flatten. -/
 noncomputable def FullLayout.toEquiv {d : ℕ} {q : ℕ} (fl : FullLayout d q) :
-    Fin (Shape.prod fl.logicalShape) ≃ Fin fl.layout.totalElements :=
-  finCongr fl.hSize
+    MultiIndex fl.logicalShape ≃ Fin fl.layout.totalElements :=
+  (groupDecomp fl.logicalShape fl.layout.shapes fl.hTiling).trans fl.layout.toEquiv
 
 /-- The full layout is bijective. -/
 theorem FullLayout.bijective {d : ℕ} {q : ℕ} (fl : FullLayout d q) :
     Function.Bijective fl.toEquiv :=
   fl.toEquiv.bijective
+
+/-- The full layout as a permutation on Fin n (when sizes match). -/
+noncomputable def FullLayout.toPermutation {d : ℕ} {q : ℕ} (fl : FullLayout d q) :
+    Fin (Shape.prod fl.logicalShape) ≃ Fin fl.layout.totalElements :=
+  (B fl.logicalShape).symm.trans fl.toEquiv
 
 end LegoLean
