@@ -10,7 +10,7 @@ the paper's intended semantics.
 
 ## References
 - LEGO paper, Figure 2: 6×4 matrix example
-- LEGO paper, Figure 6: 6×6 matrix example
+- LEGO paper, Figure 6: 6×6 matrix example (multi-chain GroupBy)
 -/
 
 import LegoLean.MainTheorem
@@ -109,8 +109,8 @@ noncomputable def exampleOrderBy : OrderBy 2 2 where
   shapes := exampleShapes
   perms := fun _ => TilePerm.regP (Equiv.refl (Fin 2))
 
-/-- The corresponding GroupBy. -/
-noncomputable def exampleGroupBy : GroupBy 2 2 := ⟨exampleOrderBy⟩
+/-- The corresponding GroupBy (using ofOrderBy smart constructor). -/
+noncomputable def exampleGroupBy : GroupBy 2 2 := GroupBy.ofOrderBy exampleOrderBy
 
 /-- The main bijectivity theorem applied to our concrete example. -/
 theorem example_bijectivity : Function.Bijective exampleGroupBy.toEquiv :=
@@ -166,7 +166,7 @@ example : ¬ InBounds (extShape := shape_6x4)
   have := h ⟨1, by omega⟩
   simp at this
 
-/-! ### Example 8: 6×6 matrix with antidiagonal permutation (Figure 6)
+/-! ### Example 8: 6×6 matrix with antidiagonal permutation (simple single-chain)
 
 A 6×6 matrix tiled into (3×3) blocks of (2×2) tiles.
 - Level 0 (blocks): shape (3, 3), product 9
@@ -201,8 +201,8 @@ noncomputable def orderBy_6x6 : OrderBy 2 2 where
     | ⟨0, _⟩ => TilePerm.genP (antiDiagGenP blockShape_6x6)
     | ⟨1, _⟩ => TilePerm.regP (Equiv.refl (Fin 2))
 
-/-- GroupBy for 6×6. -/
-noncomputable def groupBy_6x6 : GroupBy 2 2 := ⟨orderBy_6x6⟩
+/-- GroupBy for 6×6 (using ofOrderBy smart constructor). -/
+noncomputable def groupBy_6x6 : GroupBy 2 2 := GroupBy.ofOrderBy orderBy_6x6
 
 /-- The 6×6 layout is bijective. -/
 theorem example_6x6_bijectivity : Function.Bijective groupBy_6x6.toEquiv :=
@@ -224,5 +224,88 @@ theorem example_6x6_full_bijectivity : Function.Bijective fullLayout_6x6.toEquiv
 /-- The 6×6 full layout permutation is bijective. -/
 theorem example_6x6_perm_bijectivity : Function.Bijective fullLayout_6x6.toPermutation :=
   fullLayout_6x6.toPermutation.bijective
+
+/-! ### Example 9: Paper Figure 6 — Multi-chain 6×6 with cross-dimensional OrderBys
+
+This matches the paper's Figure 6 exactly:
+- O₂ = OrderBy(RegP([2,3,2,3], σ=[0↦0,1↦2,2↦1,3↦3])) — 4D, 1-level
+- O₁ = OrderBy(RegP([2,2], swap), GenP([3,3], antiDiag)) — 2D, 2-level
+- GroupBy([6,6], O₁, O₂) — tiles are (2,2) blocks of (3,3)
+
+The GroupBy has 2D tiles but the OrderBy chains have different dimensionalities,
+demonstrating cross-dimensional composition. -/
+
+/-- Block grid shape (2, 2) for paper example. -/
+def blockGrid_paper : Shape 2 := ![2, 2]
+
+/-- Tile block shape (3, 3) for paper example. -/
+def tileBlock_paper : Shape 2 := ![3, 3]
+
+/-- The tile shapes for the paper's 6×6 example: (2,2) blocks of (3,3). -/
+def shapes_6x6_paper : Fin 2 → Shape 2 := ![blockGrid_paper, tileBlock_paper]
+
+/-- Tiling check: 2*3 = 6 in each dimension. -/
+example : ∀ i : Fin 2, ∏ k : Fin 2, shapes_6x6_paper k i = shape_6x6 i := by
+  intro i; fin_cases i <;> native_decide
+
+/-- The 4D shape (2,3,2,3) for O₂ — interleaving block and tile dims. -/
+def shape_2323 : Shape 4 := ![2, 3, 2, 3]
+
+/-- σ = [1,3,2,4] (1-indexed) = swap indices 1 and 2 (0-indexed). -/
+def sigma_1324 : Equiv.Perm (Fin 4) := Equiv.swap (1 : Fin 4) (2 : Fin 4)
+
+/-- O₂: 4D, 1-level OrderBy with RegP([2,3,2,3], σ). -/
+noncomputable def orderBy_O2 : OrderBy 4 1 where
+  shapes := ![shape_2323]
+  perms := fun _ => TilePerm.regP sigma_1324
+
+/-- O₁: 2D, 2-level OrderBy with RegP([2,2], swap) and GenP([3,3], antiDiag). -/
+noncomputable def orderBy_O1 : OrderBy 2 2 where
+  shapes := ![blockGrid_paper, tileBlock_paper]
+  perms k := match k with
+    | ⟨0, _⟩ => TilePerm.regP swap2
+    | ⟨1, _⟩ => TilePerm.genP (antiDiagGenP tileBlock_paper)
+
+/-- Paper's GroupBy: cross-dimensional composition of O₁ and O₂. -/
+noncomputable def groupBy_6x6_paper : GroupBy 2 2 :=
+  GroupBy.ofTwoChains
+    shapes_6x6_paper
+    orderBy_O1 orderBy_O2
+    rfl
+    (by show ∏ k : Fin 1, Shape.prod (![shape_2323] k) =
+             ∏ k : Fin 2, Shape.prod (shapes_6x6_paper k)
+        native_decide)
+
+/-- The paper's 6×6 layout is bijective. -/
+theorem example_6x6_paper_bijectivity : Function.Bijective groupBy_6x6_paper.toEquiv :=
+  lego_bijectivity 2 2 groupBy_6x6_paper
+
+/-- FullLayout matching paper's Figure 6. -/
+noncomputable def fullLayout_6x6_paper : FullLayout 2 2 where
+  logicalShape := shape_6x6
+  layout := groupBy_6x6_paper
+  hTiling := by
+    intro i
+    show ∏ k : Fin 2, shapes_6x6_paper k i = shape_6x6 i
+    fin_cases i <;> native_decide
+
+/-- The paper's 6×6 full layout is bijective. -/
+theorem example_6x6_paper_full_bijectivity : Function.Bijective fullLayout_6x6_paper.toEquiv :=
+  fullLayout_6x6_paper.bijective
+
+/-- The paper's 6×6 full layout permutation is bijective. -/
+theorem example_6x6_paper_perm_bijectivity : Function.Bijective fullLayout_6x6_paper.toPermutation :=
+  fullLayout_6x6_paper.toPermutation.bijective
+
+/-! ### Example 10: Identity GroupBy (no permutation)
+
+Demonstrates the identity smart constructor — plain tiling with no reordering. -/
+
+/-- Identity GroupBy: standard row-major tiling with no permutations. -/
+def identityGroupBy : GroupBy 2 2 := GroupBy.identity exampleShapes
+
+/-- The identity layout is bijective. -/
+theorem example_identity_bijectivity : Function.Bijective identityGroupBy.toEquiv :=
+  lego_bijectivity 2 2 identityGroupBy
 
 end LegoLean.Examples

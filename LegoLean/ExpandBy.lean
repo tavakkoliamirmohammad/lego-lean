@@ -41,15 +41,41 @@ structure ExpandBy (d : ℕ) (q : ℕ) where
   hExtends : ∀ i, origShape i ≤ extShape i
   hTiling : ∀ i, ∏ k : Fin q, layout.shapes k i = extShape i
 
-/-- The apply function: maps a multi-index of the extended shape to a flat index,
-    returning None for out-of-bounds indices.
-    This corresponds to the -1 sentinel in the Python implementation. -/
-noncomputable def ExpandBy.apply {d : ℕ} {q : ℕ} (eb : ExpandBy d q)
-    (mi : MultiIndex eb.extShape) : Option (Fin eb.layout.totalElements) :=
-  if InBounds mi eb.origShape then
-    some (eb.layout.toEquiv (groupDecomp eb.extShape eb.layout.shapes eb.hTiling mi))
+/-- The apply function (paper Figure 9 semantics):
+    1. Decompose input multi-index and apply layout → flat index in layout space
+    2. Cast to extended shape flat index
+    3. Unflatten back to multi-index in extended shape
+    4. Check bounds on OUTPUT multi-index
+    5. If in bounds: project to original shape and flatten
+    Returns None for out-of-bounds outputs (sentinel -1 in the paper). -/
+noncomputable def ExpandBy.apply {d q : ℕ} (eb : ExpandBy d q)
+    (mi : MultiIndex eb.extShape) : Option (Fin (Shape.prod eb.origShape)) :=
+  let tileIdx := groupDecomp eb.extShape eb.layout.shapes eb.hTiling mi
+  let flatInLayout := eb.layout.toEquiv tileIdx
+  let flatInExt : Fin (Shape.prod eb.extShape) :=
+    (finCongr (tiling_implies_size eb.hTiling)).symm flatInLayout
+  let extMI := (B eb.extShape).symm flatInExt
+  if h : InBounds extMI eb.origShape then
+    let origMI : MultiIndex eb.origShape := fun i => ⟨(extMI i).val, h i⟩
+    some ((B eb.origShape) origMI)
   else
     none
+
+/-- The inverse function (paper Figure 9 semantics):
+    1. Unflatten flat index in original shape
+    2. Lift to extended shape (coordinates are valid since orig ≤ ext)
+    3. Flatten in extended shape
+    4. Cast and apply layout inverse → tiled multi-index -/
+noncomputable def ExpandBy.inv {d q : ℕ} (eb : ExpandBy d q)
+    (flatOrig : Fin (Shape.prod eb.origShape)) :
+    ((k : Fin q) → MultiIndex (eb.layout.shapes k)) :=
+  let origMI := (B eb.origShape).symm flatOrig
+  let extMI : MultiIndex eb.extShape :=
+    fun i => ⟨(origMI i).val, lt_of_lt_of_le (origMI i).isLt (eb.hExtends i)⟩
+  let flatInExt := (B eb.extShape) extMI
+  let flatInLayout : Fin eb.layout.totalElements :=
+    finCongr (tiling_implies_size eb.hTiling) flatInExt
+  eb.layout.toEquiv.symm flatInLayout
 
 /-- The subtype of in-bounds multi-indices for the extended shape. -/
 def ExpandBy.InBoundsSubtype {d : ℕ} {q : ℕ} (eb : ExpandBy d q) :=

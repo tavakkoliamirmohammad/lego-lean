@@ -6,9 +6,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 
 This file defines GroupBy, the top-level layout construct in the LEGO algebra.
 A GroupBy combines:
-1. A logical shape (how the programmer views the data)
-2. A sequence of tiling levels with shapes and permutations (OrderBy)
-3. The guarantee that the total element count is preserved
+1. Tile shapes at each tiling level
+2. A composed flat permutation (can be built from any number of OrderBy chains)
+3. The guarantee that the layout is always bijective
 
 GroupBy.toEquiv produces a bijection from the hierarchical tiled index space
 to a flat index, proving that LEGO layouts are always bijective.
@@ -29,31 +29,61 @@ namespace LegoLean
     - d: the number of logical dimensions
     - q: the number of tiling levels
     - shapes: the d-dimensional shape at each tiling level
-    - perms: a permutation at each level (GenP or RegP)
+    - perm: a composed flat permutation on the product space
 
     The key invariant is that the layout maps the combined tiled index space
-    bijectively to a flat index. -/
-structure GroupBy (d : ℕ) (q : ℕ) extends OrderBy d q
+    bijectively to a flat index.
+
+    This design supports multiple OrderBy chains with different dimensionalities,
+    matching the paper's GroupBy(tiles, O₁, O₂, ...) construct. -/
+structure GroupBy (d : ℕ) (q : ℕ) where
+  shapes : Fin q → Shape d
+  perm : Fin (∏ k : Fin q, Shape.prod (shapes k)) ≃
+         Fin (∏ k : Fin q, Shape.prod (shapes k))
 
 /-- The total number of elements in a GroupBy layout. -/
-def GroupBy.totalElements {d : ℕ} {q : ℕ} (gb : GroupBy d q) : ℕ :=
-  gb.toOrderBy.combinedProd
+def GroupBy.totalElements {d q : ℕ} (gb : GroupBy d q) : ℕ :=
+  ∏ k : Fin q, Shape.prod (gb.shapes k)
 
 /-- The GroupBy equivalence: a bijection from the hierarchical tiled index space
     to a flat index.
 
-    This is the core of the LEGO bijectivity result: the composition of
-    per-level permutations and product flattening is always a bijection.
+    Composes plain flattening (B at each level + product) with the composed
+    flat permutation.
 
     Paper reference: Section III-B, "Correctness" -/
-noncomputable def GroupBy.toEquiv {d : ℕ} {q : ℕ} (gb : GroupBy d q) :
+noncomputable def GroupBy.toEquiv {d q : ℕ} (gb : GroupBy d q) :
     ((k : Fin q) → MultiIndex (gb.shapes k)) ≃ Fin gb.totalElements :=
-  gb.toOrderBy.toFlatEquiv
+  (plainFlatten gb.shapes).trans gb.perm
 
 /-- The GroupBy layout is always bijective. -/
-theorem GroupBy.bijective {d : ℕ} {q : ℕ} (gb : GroupBy d q) :
+theorem GroupBy.bijective {d q : ℕ} (gb : GroupBy d q) :
     Function.Bijective gb.toEquiv :=
   gb.toEquiv.bijective
+
+/-- Smart constructor: build a GroupBy from a single OrderBy chain (most common). -/
+noncomputable def GroupBy.ofOrderBy {d q : ℕ} (ob : OrderBy d q) : GroupBy d q :=
+  { shapes := ob.shapes, perm := ob.asFlatPerm }
+
+/-- Smart constructor: identity layout (no reordering, just standard tiling). -/
+def GroupBy.identity {d q : ℕ} (shapes : Fin q → Shape d) : GroupBy d q :=
+  { shapes := shapes, perm := Equiv.refl _ }
+
+/-- Smart constructor: compose an additional flat permutation onto a GroupBy. -/
+noncomputable def GroupBy.compose {d q : ℕ} (gb : GroupBy d q)
+    (extraPerm : Fin gb.totalElements ≃ Fin gb.totalElements) : GroupBy d q :=
+  { shapes := gb.shapes, perm := gb.perm.trans extraPerm }
+
+/-- Smart constructor: build from two OrderBy chains with different d/q (cross-dimensional).
+    Paper's GroupBy(tiles, O₁, O₂) = apply O₂ then O₁ (reverse composition order). -/
+noncomputable def GroupBy.ofTwoChains {d q d₁ q₁ d₂ q₂ : ℕ}
+    (shapes : Fin q → Shape d)
+    (ob₁ : OrderBy d₁ q₁) (ob₂ : OrderBy d₂ q₂)
+    (h₁ : ob₁.combinedProd = ∏ k : Fin q, Shape.prod (shapes k))
+    (h₂ : ob₂.combinedProd = ∏ k : Fin q, Shape.prod (shapes k)) :
+    GroupBy d q :=
+  { shapes := shapes
+    perm := (ob₂.asFlatPermCast _ h₂).trans (ob₁.asFlatPermCast _ h₁) }
 
 /-- Per-dimension tiling implies total size equality. -/
 theorem tiling_implies_size {d q : ℕ} {shapes : Fin q → Shape d} {logicalShape : Shape d}
