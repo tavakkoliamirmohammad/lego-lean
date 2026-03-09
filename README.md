@@ -1,7 +1,7 @@
 # Formal Verification of the LEGO Layout Algebra in Lean 4
 
 Lean 4 formalization of the **LEGO Layout Algebra** from the CGO 2026 paper:
-
+![CI](https://github.com/tavakkoliamirmohammad/lego-lean/actions/workflows/ci.yml/badge.svg)
 > **LEGO: A Layout Expression Language for Code Generation of Hierarchical Mapping**
 > [https://arxiv.org/pdf/2505.08091](https://arxiv.org/pdf/2505.08091)
 
