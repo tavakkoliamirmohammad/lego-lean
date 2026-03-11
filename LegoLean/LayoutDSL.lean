@@ -151,7 +151,9 @@ private def parseTiles (tilesArr : TSyntaxArray `legoTileSpec) (d : Nat) :
     permTerms := permTerms.push (← match permOpt with
       | some spec => permSpecToTerm spec d
       | none => defaultPermTerm d)
-  return (tileShapeTerms, permTerms)
+  -- Reverse: DSL convention is outermost-first, but finPiFinEquiv uses
+  -- index 0 as least significant (innermost). Reversing aligns the two.
+  return (tileShapeTerms.reverse, permTerms.reverse)
 
 /-! ## Macro rules -/
 
@@ -178,13 +180,13 @@ macro_rules
     let cmd1 ← `(command|
       private def $shapesId : Fin $qLit → Shape $dLit := $shapesVecTerm)
     let cmd2 ← `(command|
-      noncomputable def $orderById : OrderBy $dLit $qLit :=
+      def $orderById : OrderBy $dLit $qLit :=
         ⟨$shapesId, $permsBody⟩)
     let cmd3 ← `(command|
-      noncomputable def $groupById : GroupBy $dLit $qLit :=
+      def $groupById : GroupBy $dLit $qLit :=
         GroupBy.ofOrderBy $orderById)
     let cmd4 ← `(command|
-      noncomputable def $name : FullLayout $dLit $qLit :=
+      def $name : FullLayout $dLit $qLit :=
         ⟨$logicalShapeTerm, $groupById,
          by intro i
             show ∏ k : Fin $qLit, $shapesId k i = $logicalShapeTerm i
@@ -225,13 +227,13 @@ macro_rules
     let cmd1 ← `(command|
       private def $shapesId : Fin $qLit → Shape $dLit := $shapesVecTerm)
     let cmd2 ← `(command|
-      noncomputable def $orderById : OrderBy $dLit $qLit :=
+      def $orderById : OrderBy $dLit $qLit :=
         ⟨$shapesId, $permsBody⟩)
     let cmd3 ← `(command|
-      noncomputable def $groupById : GroupBy $dLit $qLit :=
+      def $groupById : GroupBy $dLit $qLit :=
         GroupBy.ofOrderBy $orderById)
     let cmd4 ← `(command|
-      noncomputable def $name : ExpandBy $dLit $qLit :=
+      def $name : ExpandBy $dLit $qLit :=
         ⟨$origShapeTerm, $extShapeTerm, $groupById,
          by intro i; fin_cases i <;> simp,
          by intro i
@@ -241,5 +243,43 @@ macro_rules
       theorem $bijId : Function.Bijective (GroupBy.toEquiv (ExpandBy.layout $name)) :=
         ExpandBy.layout_bijective $name)
     return mkNullNode #[cmd1, cmd2, cmd3, cmd4, cmd5]
+
+
+/-! ## Layout Evaluation -/
+
+/-- A typeclass for evaluating layouts with a list of coordinates. -/
+class EvalLayout (L : Type) (d : outParam ℕ) where
+  eval : L → (Fin d → ℕ) → Option ℕ
+
+instance {d q} : EvalLayout (FullLayout d q) d where
+  eval l coords :=
+    if h : ∀ i, coords i < l.logicalShape i then
+      let multiIdx : MultiIndex l.logicalShape := fun i => ⟨coords i, h i⟩
+      some (l.toEquiv multiIdx).val
+    else
+      none
+
+instance {d q} : EvalLayout (ExpandBy d q) d where
+  eval l coords :=
+    if h : ∀ i, coords i < l.extShape i then
+      let multiIdx : MultiIndex l.extShape := fun i => ⟨coords i, h i⟩
+      match l.apply multiIdx with
+      | some finIdx => some finIdx.val
+      | none => none
+    else
+      none
+
+/-- Evaluates a layout (FullLayout or ExpandBy) on a list of nat coordinates.
+    Usage: `#eval evalLayout my_layout [1, 2, ...]` -/
+def evalLayout {L d} [EvalLayout L d] (l : L) (lst : List ℕ) : Option ℕ :=
+  if lst.length = d then
+    let coords := fun (i : Fin d) =>
+      if h_bounds : i.val < lst.length then
+        lst.get ⟨i.val, h_bounds⟩
+      else
+        0
+    EvalLayout.eval l coords
+  else
+    none
 
 end LegoLean

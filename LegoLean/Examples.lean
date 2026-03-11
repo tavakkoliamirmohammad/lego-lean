@@ -105,12 +105,12 @@ This is the core demonstration: building a layout and getting bijectivity for fr
 def exampleShapes : Fin 2 → Shape 2 := ![blockShape, tileShape]
 
 /-- A concrete OrderBy with 2 levels, each 2-dimensional, using identity permutations. -/
-noncomputable def exampleOrderBy : OrderBy 2 2 where
+def exampleOrderBy : OrderBy 2 2 where
   shapes := exampleShapes
   perms := fun _ => TilePerm.regP (Equiv.refl (Fin 2))
 
 /-- The corresponding GroupBy (using ofOrderBy smart constructor). -/
-noncomputable def exampleGroupBy : GroupBy 2 2 := GroupBy.ofOrderBy exampleOrderBy
+def exampleGroupBy : GroupBy 2 2 := GroupBy.ofOrderBy exampleOrderBy
 
 /-- The main bijectivity theorem applied to our concrete example. -/
 theorem example_bijectivity : Function.Bijective exampleGroupBy.toEquiv :=
@@ -123,7 +123,7 @@ The FullLayout.toEquiv maps logical multi-indices through the
 group decomposition and per-level permutations. -/
 
 /-- A FullLayout for the 6×4 matrix with 2×2 tiling. -/
-noncomputable def exampleFullLayout : FullLayout 2 2 where
+def exampleFullLayout : FullLayout 2 2 where
   logicalShape := shape_6x4
   layout := exampleGroupBy
   hTiling := by
@@ -144,7 +144,7 @@ theorem example_full_layout_perm_bijectivity : Function.Bijective exampleFullLay
 Demonstrate that ExpandBy.apply correctly classifies in-bounds vs out-of-bounds. -/
 
 /-- An ExpandBy for a 5×3 matrix extended to 6×4 with 2×2 tiling. -/
-noncomputable def exampleExpandBy : ExpandBy 2 2 where
+def exampleExpandBy : ExpandBy 2 2 where
   origShape := ![5, 3]
   extShape := shape_6x4
   layout := exampleGroupBy
@@ -195,21 +195,21 @@ example : ∀ i : Fin 2, ∏ k : Fin 2, shapes_6x6 k i = shape_6x6 i := by
   intro i; fin_cases i <;> native_decide
 
 /-- OrderBy for 6×6: antidiagonal at block level, identity at tile level. -/
-noncomputable def orderBy_6x6 : OrderBy 2 2 where
+def orderBy_6x6 : OrderBy 2 2 where
   shapes := shapes_6x6
   perms k := match k with
     | ⟨0, _⟩ => TilePerm.genP (antiDiagGenP blockShape_6x6)
     | ⟨1, _⟩ => TilePerm.regP (Equiv.refl (Fin 2))
 
 /-- GroupBy for 6×6 (using ofOrderBy smart constructor). -/
-noncomputable def groupBy_6x6 : GroupBy 2 2 := GroupBy.ofOrderBy orderBy_6x6
+def groupBy_6x6 : GroupBy 2 2 := GroupBy.ofOrderBy orderBy_6x6
 
 /-- The 6×6 layout is bijective. -/
 theorem example_6x6_bijectivity : Function.Bijective groupBy_6x6.toEquiv :=
   lego_bijectivity 2 2 groupBy_6x6
 
 /-- FullLayout for the 6×6 matrix. -/
-noncomputable def fullLayout_6x6 : FullLayout 2 2 where
+def fullLayout_6x6 : FullLayout 2 2 where
   logicalShape := shape_6x6
   layout := groupBy_6x6
   hTiling := by
@@ -255,19 +255,19 @@ def shape_2323 : Shape 4 := ![2, 3, 2, 3]
 def sigma_1324 : Equiv.Perm (Fin 4) := Equiv.swap (1 : Fin 4) (2 : Fin 4)
 
 /-- O₂: 4D, 1-level OrderBy with RegP([2,3,2,3], σ). -/
-noncomputable def orderBy_O2 : OrderBy 4 1 where
+def orderBy_O2 : OrderBy 4 1 where
   shapes := ![shape_2323]
   perms := fun _ => TilePerm.regP sigma_1324
 
 /-- O₁: 2D, 2-level OrderBy with RegP([2,2], swap) and GenP([3,3], antiDiag). -/
-noncomputable def orderBy_O1 : OrderBy 2 2 where
+def orderBy_O1 : OrderBy 2 2 where
   shapes := ![blockGrid_paper, tileBlock_paper]
   perms k := match k with
     | ⟨0, _⟩ => TilePerm.regP swap2
     | ⟨1, _⟩ => TilePerm.genP (antiDiagGenP tileBlock_paper)
 
 /-- Paper's GroupBy: cross-dimensional composition of O₁ and O₂. -/
-noncomputable def groupBy_6x6_paper : GroupBy 2 2 :=
+def groupBy_6x6_paper : GroupBy 2 2 :=
   GroupBy.ofTwoChains
     shapes_6x6_paper
     orderBy_O1 orderBy_O2
@@ -281,7 +281,7 @@ theorem example_6x6_paper_bijectivity : Function.Bijective groupBy_6x6_paper.toE
   lego_bijectivity 2 2 groupBy_6x6_paper
 
 /-- FullLayout matching paper's Figure 6. -/
-noncomputable def fullLayout_6x6_paper : FullLayout 2 2 where
+def fullLayout_6x6_paper : FullLayout 2 2 where
   logicalShape := shape_6x6
   layout := groupBy_6x6_paper
   hTiling := by

@@ -220,7 +220,7 @@ the thread ID maps to. -/
 
 /-- Build a ThreadLayout from a FullLayout where thread ID varies along one dimension.
     Other dimensions are fixed at `defaultIdx`. Requires `warpSize ≤ dim size`. -/
-noncomputable def ThreadLayout.ofFullLayout1D {d q : ℕ}
+def ThreadLayout.ofFullLayout1D {d q : ℕ}
     (cfg : GpuConfig) (fl : FullLayout d q)
     (threadDim : Fin d)
     (hFit : cfg.warpSize ≤ fl.logicalShape threadDim)

@@ -155,13 +155,13 @@ def blockShape_64x32 : Shape 2 := ![8, 4]
 def tileShape_64x32 : Shape 2 := ![8, 8]
 def shapes_64x32 : Fin 2 → Shape 2 := ![blockShape_64x32, tileShape_64x32]
 
-noncomputable def orderBy_64x32 : OrderBy 2 2 where
+def orderBy_64x32 : OrderBy 2 2 where
   shapes := shapes_64x32
   perms := fun _ => TilePerm.regP (Equiv.refl (Fin 2))
 
-noncomputable def groupBy_64x32 : GroupBy 2 2 := GroupBy.ofOrderBy orderBy_64x32
+def groupBy_64x32 : GroupBy 2 2 := GroupBy.ofOrderBy orderBy_64x32
 
-noncomputable def fullLayout_64x32 : FullLayout 2 2 where
+def fullLayout_64x32 : FullLayout 2 2 where
   logicalShape := shape_64x32
   layout := groupBy_64x32
   hTiling := by
@@ -174,7 +174,7 @@ def defaultIdx_64x32 : MultiIndex shape_64x32 :=
 
 /-- Build a ThreadLayout where thread ID varies along dim 1 (columns, size 32).
     Distinct threads get distinct addresses (from FullLayout bijectivity). -/
-noncomputable def threadLayout_64x32 : ThreadLayout GpuConfig.standard fullLayout_64x32.layout.totalElements :=
+def threadLayout_64x32 : ThreadLayout GpuConfig.standard fullLayout_64x32.layout.totalElements :=
   ThreadLayout.ofFullLayout1D GpuConfig.standard fullLayout_64x32 ⟨1, by omega⟩
     (by show 32 ≤ shape_64x32 ⟨1, by omega⟩; native_decide)
     defaultIdx_64x32

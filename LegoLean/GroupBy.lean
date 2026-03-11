@@ -52,7 +52,7 @@ def GroupBy.totalElements {d q : ℕ} (gb : GroupBy d q) : ℕ :=
     flat permutation.
 
     Paper reference: Section III-B, "Correctness" -/
-noncomputable def GroupBy.toEquiv {d q : ℕ} (gb : GroupBy d q) :
+def GroupBy.toEquiv {d q : ℕ} (gb : GroupBy d q) :
     ((k : Fin q) → MultiIndex (gb.shapes k)) ≃ Fin gb.totalElements :=
   (plainFlatten gb.shapes).trans gb.perm
 
@@ -62,7 +62,7 @@ theorem GroupBy.bijective {d q : ℕ} (gb : GroupBy d q) :
   gb.toEquiv.bijective
 
 /-- Smart constructor: build a GroupBy from a single OrderBy chain (most common). -/
-noncomputable def GroupBy.ofOrderBy {d q : ℕ} (ob : OrderBy d q) : GroupBy d q :=
+def GroupBy.ofOrderBy {d q : ℕ} (ob : OrderBy d q) : GroupBy d q :=
   { shapes := ob.shapes, perm := ob.asFlatPerm }
 
 /-- Smart constructor: identity layout (no reordering, just standard tiling). -/
@@ -70,13 +70,13 @@ def GroupBy.identity {d q : ℕ} (shapes : Fin q → Shape d) : GroupBy d q :=
   { shapes := shapes, perm := Equiv.refl _ }
 
 /-- Smart constructor: compose an additional flat permutation onto a GroupBy. -/
-noncomputable def GroupBy.compose {d q : ℕ} (gb : GroupBy d q)
+def GroupBy.compose {d q : ℕ} (gb : GroupBy d q)
     (extraPerm : Fin gb.totalElements ≃ Fin gb.totalElements) : GroupBy d q :=
   { shapes := gb.shapes, perm := gb.perm.trans extraPerm }
 
 /-- Smart constructor: build from two OrderBy chains with different d/q (cross-dimensional).
     Paper's GroupBy(tiles, O₁, O₂) = apply O₂ then O₁ (reverse composition order). -/
-noncomputable def GroupBy.ofTwoChains {d q d₁ q₁ d₂ q₂ : ℕ}
+def GroupBy.ofTwoChains {d q d₁ q₁ d₂ q₂ : ℕ}
     (shapes : Fin q → Shape d)
     (ob₁ : OrderBy d₁ q₁) (ob₂ : OrderBy d₂ q₂)
     (h₁ : ob₁.combinedProd = ∏ k : Fin q, Shape.prod (shapes k))
@@ -96,7 +96,7 @@ theorem tiling_implies_size {d q : ℕ} {shapes : Fin q → Shape d} {logicalSha
 
 /-- The group decomposition: decomposes a logical multi-index into per-level sub-indices.
     MultiIndex logicalShape ≃ (k : Fin q) → MultiIndex (shapes k) -/
-noncomputable def groupDecomp {d q : ℕ} (logicalShape : Shape d) (shapes : Fin q → Shape d)
+def groupDecomp {d q : ℕ} (logicalShape : Shape d) (shapes : Fin q → Shape d)
     (hTiling : ∀ i, ∏ k : Fin q, shapes k i = logicalShape i) :
     MultiIndex logicalShape ≃ ((k : Fin q) → MultiIndex (shapes k)) :=
   (Equiv.piCongrRight (fun i =>
@@ -118,7 +118,7 @@ theorem FullLayout.hSize {d : ℕ} {q : ℕ} (fl : FullLayout d q) :
 
 /-- The full layout bijection: logical multi-index → physical flat index.
     Composes: groupDecomp → per-level permutations → flatten. -/
-noncomputable def FullLayout.toEquiv {d : ℕ} {q : ℕ} (fl : FullLayout d q) :
+def FullLayout.toEquiv {d : ℕ} {q : ℕ} (fl : FullLayout d q) :
     MultiIndex fl.logicalShape ≃ Fin fl.layout.totalElements :=
   (groupDecomp fl.logicalShape fl.layout.shapes fl.hTiling).trans fl.layout.toEquiv
 
@@ -128,7 +128,7 @@ theorem FullLayout.bijective {d : ℕ} {q : ℕ} (fl : FullLayout d q) :
   fl.toEquiv.bijective
 
 /-- The full layout as a permutation on Fin n (when sizes match). -/
-noncomputable def FullLayout.toPermutation {d : ℕ} {q : ℕ} (fl : FullLayout d q) :
+def FullLayout.toPermutation {d : ℕ} {q : ℕ} (fl : FullLayout d q) :
     Fin (Shape.prod fl.logicalShape) ≃ Fin fl.layout.totalElements :=
   (B fl.logicalShape).symm.trans fl.toEquiv
 

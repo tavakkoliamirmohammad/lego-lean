@@ -31,7 +31,7 @@ def GenP {d : ℕ} (s : Shape d) (e : MultiIndex s ≃ FlatIndex s) :
 
 /-- The reindexing of multi-indices by σ is an equivalence.
     MultiIndex s ≃ MultiIndex (s ∘ σ) -/
-noncomputable def reindexEquiv {d : ℕ} (s : Shape d) (σ : Equiv.Perm (Fin d)) :
+def reindexEquiv {d : ℕ} (s : Shape d) (σ : Equiv.Perm (Fin d)) :
     MultiIndex s ≃ MultiIndex (s ∘ σ) :=
   Equiv.piCongrLeft' (fun i => Fin (s i)) σ.symm
 
@@ -46,7 +46,7 @@ noncomputable def reindexEquiv {d : ℕ} (s : Shape d) (σ : Equiv.Perm (Fin d))
     3. Cast:   FlatIndex (s ∘ σ⁻¹) ≃ FlatIndex s      (products are equal)
 
     Paper reference: Figure 3, RegP(dims, σ) -/
-noncomputable def RegP {d : ℕ} (s : Shape d) (σ : Equiv.Perm (Fin d)) :
+def RegP {d : ℕ} (s : Shape d) (σ : Equiv.Perm (Fin d)) :
     MultiIndex s ≃ FlatIndex s :=
   let σinv := σ.symm
   let permutedShape : Shape d := s ∘ σinv
@@ -73,7 +73,7 @@ inductive TilePerm (d : ℕ) (s : Shape d) where
   | regP (σ : Equiv.Perm (Fin d)) : TilePerm d s
 
 /-- Convert a TilePerm to an equivalence. -/
-noncomputable def TilePerm.toEquiv {d : ℕ} {s : Shape d} : TilePerm d s → (MultiIndex s ≃ FlatIndex s)
+def TilePerm.toEquiv {d : ℕ} {s : Shape d} : TilePerm d s → (MultiIndex s ≃ FlatIndex s)
   | .genP e => GenP s e
   | .regP σ => RegP s σ
 

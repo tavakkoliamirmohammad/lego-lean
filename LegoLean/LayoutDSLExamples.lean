@@ -27,6 +27,9 @@ lego_full_layout dsl_row_6x4 : [6, 4] tileby [
 #check @dsl_row_6x4            -- FullLayout 2 2
 #check @dsl_row_6x4_bijective  -- Function.Bijective dsl_row_6x4.toEquiv
 
+-- Evaluate flat index for coordinate (1, 2)
+#eval LegoLean.evalLayout dsl_row_6x4 [1, 2]
+
 /-! ### Example 2: 6×4 with identity shorthand (omit perm spec) -/
 
 lego_full_layout dsl_row_6x4_short : [6, 4] tileby [
@@ -77,6 +80,11 @@ lego_expand_layout dsl_expand_5x3 : [5, 3] → [6, 4] tileby [
 #check @dsl_expand_5x3                  -- ExpandBy 2 2
 #check @dsl_expand_5x3_layout_bijective -- Function.Bijective ...
 
+-- Evaluate flat index for coordinate in original bounds (e.g. 1, 2)
+#eval LegoLean.evalLayout dsl_expand_5x3 [1, 2]
+-- Evaluate flat index for padded coordinate outside bounds (e.g. 5, 3) -> returns none
+#eval LegoLean.evalLayout dsl_expand_5x3 [5, 3]
+
 /-! ### Example 7: 1D layout -/
 
 lego_full_layout dsl_1d : [12] tileby [
@@ -95,6 +103,9 @@ lego_full_layout dsl_3d : [8, 6, 4] tileby [
 
 #check @dsl_3d
 #check @dsl_3d_bijective
+
+-- Evaluate flat index for 3D coordinate (1, 2, 3)
+#eval LegoLean.evalLayout dsl_3d [1, 2, 3]
 
 /-! ### Example 9: Single tile level -/
 
@@ -130,6 +141,8 @@ lego_full_layout dsl_mixed_row_col : [6, 6] tileby [
   [3, 3] with col,
   [2, 2] with row
 ]
+#eval LegoLean.evalLayout dsl_mixed_row_col [0, 2]
+#guard LegoLean.evalLayout dsl_mixed_row_col [0, 2] == some 12
 
 #check @dsl_mixed_row_col
 #check @dsl_mixed_row_col_bijective

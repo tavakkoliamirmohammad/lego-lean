@@ -48,7 +48,7 @@ structure ExpandBy (d : ℕ) (q : ℕ) where
     4. Check bounds on OUTPUT multi-index
     5. If in bounds: project to original shape and flatten
     Returns None for out-of-bounds outputs (sentinel -1 in the paper). -/
-noncomputable def ExpandBy.apply {d q : ℕ} (eb : ExpandBy d q)
+def ExpandBy.apply {d q : ℕ} (eb : ExpandBy d q)
     (mi : MultiIndex eb.extShape) : Option (Fin (Shape.prod eb.origShape)) :=
   let tileIdx := groupDecomp eb.extShape eb.layout.shapes eb.hTiling mi
   let flatInLayout := eb.layout.toEquiv tileIdx
@@ -66,7 +66,7 @@ noncomputable def ExpandBy.apply {d q : ℕ} (eb : ExpandBy d q)
     2. Lift to extended shape (coordinates are valid since orig ≤ ext)
     3. Flatten in extended shape
     4. Cast and apply layout inverse → tiled multi-index -/
-noncomputable def ExpandBy.inv {d q : ℕ} (eb : ExpandBy d q)
+def ExpandBy.inv {d q : ℕ} (eb : ExpandBy d q)
     (flatOrig : Fin (Shape.prod eb.origShape)) :
     ((k : Fin q) → MultiIndex (eb.layout.shapes k)) :=
   let origMI := (B eb.origShape).symm flatOrig

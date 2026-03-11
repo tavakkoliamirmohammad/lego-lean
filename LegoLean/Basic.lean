@@ -57,16 +57,24 @@ theorem Shape.prod_permute {d : ℕ} (s : Shape d) (σ : Equiv.Perm (Fin d)) :
   unfold Shape.prod Shape.permute
   exact Fintype.prod_equiv σ _ _ (fun i => rfl)
 
+/-- Dimension-reversal equivalence: maps dimension i to dimension d-1-i.
+    Converts finPiFinEquiv's little-endian convention to row-major (big-endian). -/
+private def dimRevEquiv (d : ℕ) : Fin d ≃ Fin d where
+  toFun i := ⟨d - 1 - i.val, by omega⟩
+  invFun i := ⟨d - 1 - i.val, by omega⟩
+  left_inv i := by ext; show d - 1 - (d - 1 - i.val) = i.val; omega
+  right_inv i := by ext; show d - 1 - (d - 1 - i.val) = i.val; omega
+
 /-- The canonical bijection B from multi-indices to flat indices.
     This is the row-major linearization:
-      B(n₁,...,nq)(i₁,...,iq) = i₁·(n₂·...·nq) + ... + iq
+      B(n₁,...,n_d)(i₁,...,i_d) = i₁·(n₂·...·n_d) + ... + i_d
 
-    We use Mathlib's `finPiFinEquiv` which provides exactly this bijection
-    together with its inverse, bundled as an `Equiv`.
-
-    Note: `finPiFinEquiv` has type `(∀ i : Fin d, Fin (s i)) ≃ Fin (∏ i, s i)`,
-    which is exactly `MultiIndex s ≃ FlatIndex s` after unfolding definitions. -/
-noncomputable def B {d : ℕ} (s : Shape d) : MultiIndex s ≃ FlatIndex s :=
-  (finPiFinEquiv : ((i : Fin d) → Fin (s i)) ≃ Fin (∏ i : Fin d, s i))
+    We compose dimension reversal with `finPiFinEquiv` to achieve row-major
+    ordering (most significant index first), since `finPiFinEquiv` natively
+    uses little-endian convention (least significant index first). -/
+def B {d : ℕ} (s : Shape d) : MultiIndex s ≃ FlatIndex s :=
+  (Equiv.piCongrLeft' (fun i => Fin (s i)) (dimRevEquiv d)).trans
+    ((finPiFinEquiv (n := fun j => s ((dimRevEquiv d).symm j))).trans
+     (finCongr (Shape.prod_permute s (dimRevEquiv d).symm)))
 
 end LegoLean

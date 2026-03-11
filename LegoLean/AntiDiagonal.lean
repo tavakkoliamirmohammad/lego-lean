@@ -75,11 +75,11 @@ def antiDiagMultiIndexEquiv (s : Shape 2) : MultiIndex s ≃ MultiIndex s where
     Maps (i, j) ↦ B(n, m)(i, m-1-j) = i * m + (m - 1 - j).
 
     This is a concrete `Equiv` from `MultiIndex s` to `FlatIndex s`. -/
-noncomputable def antiDiagGenP (s : Shape 2) : MultiIndex s ≃ FlatIndex s :=
+def antiDiagGenP (s : Shape 2) : MultiIndex s ≃ FlatIndex s :=
   (antiDiagMultiIndexEquiv s).trans (B s)
 
 /-- Wrapping antiDiagGenP as a TilePerm for use in OrderBy/GroupBy. -/
-noncomputable def antiDiagTilePerm (s : Shape 2) : TilePerm 2 s :=
+def antiDiagTilePerm (s : Shape 2) : TilePerm 2 s :=
   TilePerm.genP (antiDiagGenP s)
 
 /-! ## Concrete verification: 3×3 example
