@@ -7,3 +7,5 @@ import LegoLean.Simplification
 import LegoLean.MainTheorem
 import LegoLean.Examples
 import LegoLean.AntiDiagonal
+import LegoLean.LayoutDSL
+import LegoLean.LayoutDSLExamples
