@@ -367,4 +367,46 @@ def evalLayout {L d} [EvalLayout L d] (l : L) (lst : List ℕ) : Option ℕ :=
   else
     none
 
+/-! ## 2D Layout Printing -/
+
+/-- Render a 2D FullLayout as a grid string.
+    Each cell shows the flat index for that (row, col) coordinate. -/
+def printLayout2D {q : ℕ} (fl : FullLayout 2 q) : String :=
+  let nRows := fl.logicalShape ⟨0, by omega⟩
+  let nCols := fl.logicalShape ⟨1, by omega⟩
+  let cells : List (List String) := List.range nRows |>.map fun r =>
+    List.range nCols |>.map fun c =>
+      match evalLayout fl [r, c] with
+      | some v => toString v
+      | none => "?"
+  let maxWidth := cells.foldl (fun acc line =>
+    line.foldl (fun acc2 s => max acc2 s.length) acc) 0
+  let pad (s : String) : String :=
+    String.ofList (List.replicate (maxWidth - s.length) ' ') ++ s
+  let rowStrs := cells.map fun line =>
+    String.intercalate " " (line.map pad)
+  String.intercalate "\n" rowStrs
+
+/-- Render a 2D ExpandBy as a grid string.
+    In-bounds cells show the flat index, out-of-bounds show ".". -/
+def printExpandLayout2D {q : ℕ} (eb : ExpandBy 2 q) : String :=
+  let nRows := eb.extShape ⟨0, by omega⟩
+  let nCols := eb.extShape ⟨1, by omega⟩
+  let origRows := eb.origShape ⟨0, by omega⟩
+  let origCols := eb.origShape ⟨1, by omega⟩
+  let cells : List (List String) := List.range nRows |>.map fun r =>
+    List.range nCols |>.map fun c =>
+      if r < origRows && c < origCols then
+        match evalLayout eb [r, c] with
+        | some v => toString v
+        | none => "."
+      else "."
+  let maxWidth := cells.foldl (fun acc line =>
+    line.foldl (fun acc2 s => max acc2 s.length) acc) 0
+  let pad (s : String) : String :=
+    String.ofList (List.replicate (maxWidth - s.length) ' ') ++ s
+  let rowStrs := cells.map fun line =>
+    String.intercalate " " (line.map pad)
+  String.intercalate "\n" rowStrs
+
 end LegoLean

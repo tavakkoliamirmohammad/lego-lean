@@ -58,7 +58,7 @@ lego_full_layout ex_2d_row : [6, 4] tileby [
 
 #check @ex_2d_row
 #check @ex_2d_row_bijective
-#eval evalLayout ex_2d_row [1, 2]
+#eval IO.println <| LegoLean.printLayout2D ex_2d_row
 
 /-! ### 2D row-major, explicit `row` sugar -/
 
@@ -79,6 +79,7 @@ lego_full_layout ex_2d_col : [6, 4] tileby [
 
 #check @ex_2d_col
 #check @ex_2d_col_bijective
+#eval IO.println <| LegoLean.printLayout2D ex_2d_col
 
 /-! ### 2D col-major everywhere -/
 
@@ -97,9 +98,9 @@ lego_full_layout ex_2d_mixed : [6, 6] tileby [
   [2, 2] with row
 ]
 
-#eval evalLayout ex_2d_mixed [0, 2]
 #guard evalLayout ex_2d_mixed [0, 2] == some 12
 #check @ex_2d_mixed_bijective
+#eval IO.println <| LegoLean.printLayout2D ex_2d_mixed
 
 /-! ### 2D three tile levels -/
 
@@ -120,6 +121,7 @@ lego_full_layout ex_2d_regp : [6, 6] tileby [
 ]
 
 #check @ex_2d_regp
+#eval IO.println <| LegoLean.printLayout2D ex_2d_regp
 
 /-! ### 2D genP (antidiagonal bijection) -/
 
@@ -130,7 +132,7 @@ lego_full_layout ex_2d_genp : [6, 6] tileby [
 
 #check @ex_2d_genp
 #check @ex_2d_genp_bijective
-#check @ex_2d_genp_perm_bijective
+#eval IO.println <| LegoLean.printLayout2D ex_2d_genp
 
 /-! ## 3D -/
 
@@ -174,8 +176,7 @@ lego_expand_layout ex_expand : [5, 3] → [6, 4] tileby [
 
 #check @ex_expand                  -- ExpandBy 2 2
 #check @ex_expand_layout_bijective
-#eval evalLayout ex_expand [1, 2]  -- in-bounds → some
-#eval evalLayout ex_expand [5, 3]  -- out-of-bounds → none
+#eval IO.println <| LegoLean.printExpandLayout2D ex_expand
 
 /-! ### ExpandBy with groupby -/
 
