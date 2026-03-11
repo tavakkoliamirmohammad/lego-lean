@@ -58,8 +58,8 @@ theorem Shape.prod_permute {d : ℕ} (s : Shape d) (σ : Equiv.Perm (Fin d)) :
   exact Fintype.prod_equiv σ _ _ (fun i => rfl)
 
 /-- Dimension-reversal equivalence: maps dimension i to dimension d-1-i.
-    Converts finPiFinEquiv's little-endian convention to row-major (big-endian). -/
-private def dimRevEquiv (d : ℕ) : Fin d ≃ Fin d where
+    Used by `B` for row-major ordering and by `col` perm for column-major. -/
+def dimRevEquiv (d : ℕ) : Fin d ≃ Fin d where
   toFun i := ⟨d - 1 - i.val, by omega⟩
   invFun i := ⟨d - 1 - i.val, by omega⟩
   left_inv i := by ext; show d - 1 - (d - 1 - i.val) = i.val; omega

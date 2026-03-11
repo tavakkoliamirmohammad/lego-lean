@@ -85,6 +85,27 @@ def GroupBy.ofTwoChains {d q d₁ q₁ d₂ q₂ : ℕ}
   { shapes := shapes
     perm := (ob₂.asFlatPermCast _ h₂).trans (ob₁.asFlatPermCast _ h₁) }
 
+/-! ## Interleaving Permutation σ_{d×q}
+
+The paper's σ_{d×q} = flatten(A) where A : [d][q]int, A_{k,h} = k + 1 + d·h (1-indexed).
+In 0-indexed terms: σ(k·q + h) = k + d·h.
+
+This is the matrix transpose on a d×q grid: decompose a flat index as (row, col)
+in a d×q matrix, then re-flatten in column-major order.
+
+In `groupDecomp`, this appears structurally as `Equiv.piComm`, which swaps
+the order of dependent function arguments from (dim, level) to (level, dim). -/
+
+/-- The interleaving permutation σ_{d×q} from the LEGO paper.
+    Maps σ(k·q + h) = k + d·h (0-indexed), equivalently transposing a d×q matrix.
+
+    Paper reference: σ_{d×q} = flatten(A), A_{k,h} = k + 1 + d·h (1-indexed) -/
+def sigmaPerm (d q : ℕ) : Fin (d * q) ≃ Fin (d * q) :=
+  finProdFinEquiv.symm
+  |>.trans (Equiv.prodComm (Fin d) (Fin q))
+  |>.trans finProdFinEquiv
+  |>.trans (finCongr (Nat.mul_comm q d))
+
 /-- Per-dimension tiling implies total size equality. -/
 theorem tiling_implies_size {d q : ℕ} {shapes : Fin q → Shape d} {logicalShape : Shape d}
     (hTiling : ∀ i, ∏ k : Fin q, shapes k i = logicalShape i) :
@@ -131,5 +152,63 @@ theorem FullLayout.bijective {d : ℕ} {q : ℕ} (fl : FullLayout d q) :
 def FullLayout.toPermutation {d : ℕ} {q : ℕ} (fl : FullLayout d q) :
     Fin (Shape.prod fl.logicalShape) ≃ Fin fl.layout.totalElements :=
   (B fl.logicalShape).symm.trans fl.toEquiv
+
+/-- TileBy: the primary user-facing LEGO tiling construct.
+    Specifies d-dimensional tile shapes at q levels, each with a permutation.
+    Generates a bijective GroupBy layout.
+
+    Corresponds to Python's `TileBy(*group_dims)`.
+
+    Paper reference: LEGO paper, Section III-B -/
+structure TileBy (d : ℕ) (q : ℕ) where
+  shapes : Fin q → Shape d
+  perms : (k : Fin q) → TilePerm d (shapes k)
+
+namespace TileBy
+
+/-- The underlying OrderBy. -/
+def toOrderBy {d q : ℕ} (tb : TileBy d q) : OrderBy d q :=
+  ⟨tb.shapes, tb.perms⟩
+
+/-- Convert to GroupBy. -/
+def toGroupBy {d q : ℕ} (tb : TileBy d q) : GroupBy d q :=
+  GroupBy.ofOrderBy tb.toOrderBy
+
+/-- Total number of elements in the tiled space. -/
+def totalElements {d q : ℕ} (tb : TileBy d q) : ℕ :=
+  tb.toGroupBy.totalElements
+
+/-- The TileBy equivalence: hierarchical tiled indices → flat index. -/
+def toEquiv {d q : ℕ} (tb : TileBy d q) :
+    ((k : Fin q) → MultiIndex (tb.shapes k)) ≃ Fin tb.totalElements :=
+  tb.toGroupBy.toEquiv
+
+/-- TileBy is always bijective. -/
+theorem bijective {d q : ℕ} (tb : TileBy d q) :
+    Function.Bijective tb.toEquiv :=
+  tb.toEquiv.bijective
+
+/-- TileBy is injective. -/
+theorem injective {d q : ℕ} (tb : TileBy d q) :
+    Function.Injective tb.toEquiv :=
+  tb.toEquiv.injective
+
+/-- TileBy is surjective. -/
+theorem surjective {d q : ℕ} (tb : TileBy d q) :
+    Function.Surjective tb.toEquiv :=
+  tb.toEquiv.surjective
+
+/-- Create a FullLayout from a TileBy and a logical shape. -/
+def toFullLayout {d q : ℕ} (tb : TileBy d q) (logicalShape : Shape d)
+    (hTiling : ∀ i, ∏ k : Fin q, tb.shapes k i = logicalShape i) : FullLayout d q :=
+  ⟨logicalShape, tb.toGroupBy, hTiling⟩
+
+/-- The FullLayout from TileBy is bijective. -/
+theorem fullLayout_bijective {d q : ℕ} (tb : TileBy d q) (logicalShape : Shape d)
+    (hTiling : ∀ i, ∏ k : Fin q, tb.shapes k i = logicalShape i) :
+    Function.Bijective (tb.toFullLayout logicalShape hTiling).toEquiv :=
+  (tb.toFullLayout logicalShape hTiling).bijective
+
+end TileBy
 
 end LegoLean

@@ -4,7 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 
 # Layout DSL Examples
 
-Exercises all DSL forms: identity, row, col, regP, genP, ExpandBy, 1D/2D/3D.
+Progressively complex examples exercising all DSL forms:
+tileby, groupby, row, col, regP, genP, ExpandBy, 1D/2D/3D, multi-level.
 Each example compiles with zero `sorry` — bijectivity comes for free.
 
 ## References
@@ -17,186 +18,183 @@ import LegoLean.AntiDiagonal
 
 namespace LegoLean.LayoutDSLExamples
 
-/-! ### Example 1: 6×4 with identity permutations (explicit) -/
+/-! ## 1D -/
 
-lego_full_layout dsl_row_6x4 : [6, 4] tileby [
-  [3, 2] with regP id,
-  [2, 2] with regP id
+/-! ### 1D row-major, single tile (identity layout) -/
+
+lego_full_layout ex_1d_single : [12] tileby [
+  [12]
 ]
 
-#check @dsl_row_6x4            -- FullLayout 2 2
-#check @dsl_row_6x4_bijective  -- Function.Bijective dsl_row_6x4.toEquiv
+#check @ex_1d_single  -- FullLayout 1 1
 
--- Evaluate flat index for coordinate (1, 2)
-#eval LegoLean.evalLayout dsl_row_6x4 [1, 2]
+/-! ### 1D row-major, two tile levels -/
 
-/-! ### Example 2: 6×4 with identity shorthand (omit perm spec) -/
-
-lego_full_layout dsl_row_6x4_short : [6, 4] tileby [
-  [3, 2],
-  [2, 2]
-]
-
-#check @dsl_row_6x4_short
-
-/-! ### Example 3: 6×4 with `row` sugar -/
-
-lego_full_layout dsl_row_sugar : [6, 4] tileby [
-  [3, 2] with row,
-  [2, 2] with row
-]
-
-#check @dsl_row_sugar
-#check @dsl_row_sugar_bijective
-
-/-! ### Example 4: 6×4 with `col` sugar (column-major at tile level) -/
-
-lego_full_layout dsl_col_sugar : [6, 4] tileby [
-  [3, 2] with col,
-  [2, 2] with row
-]
-
-#check @dsl_col_sugar
-#check @dsl_col_sugar_bijective
-
-/-! ### Example 5: 6×6 with antidiagonal GenP at block level -/
-
-lego_full_layout dsl_6x6_antidiag : [6, 6] tileby [
-  [3, 3] with genP (antiDiagGenP ![3, 3]),
-  [2, 2] with regP id
-]
-
-#check @dsl_6x6_antidiag
-#check @dsl_6x6_antidiag_bijective
-#check @dsl_6x6_antidiag_perm_bijective
-
-/-! ### Example 6: ExpandBy — 5×3 extended to 6×4 -/
-
-lego_expand_layout dsl_expand_5x3 : [5, 3] → [6, 4] tileby [
-  [3, 2],
-  [2, 2]
-]
-
-#check @dsl_expand_5x3                  -- ExpandBy 2 2
-#check @dsl_expand_5x3_layout_bijective -- Function.Bijective ...
-
--- Evaluate flat index for coordinate in original bounds (e.g. 1, 2)
-#eval LegoLean.evalLayout dsl_expand_5x3 [1, 2]
--- Evaluate flat index for padded coordinate outside bounds (e.g. 5, 3) -> returns none
-#eval LegoLean.evalLayout dsl_expand_5x3 [5, 3]
-
-/-! ### Example 7: 1D layout -/
-
-lego_full_layout dsl_1d : [12] tileby [
+lego_full_layout ex_1d_tiled : [12] tileby [
   [3],
   [4]
 ]
 
-#check @dsl_1d
+#check @ex_1d_tiled
+#check @ex_1d_tiled_bijective
 
-/-! ### Example 8: 3D layout -/
+/-! ## 2D — tileby (→ TileBy) -/
 
-lego_full_layout dsl_3d : [8, 6, 4] tileby [
-  [2, 3, 2],
-  [4, 2, 2]
+/-! ### 2D single tile (no tiling, just flattening) -/
+
+lego_full_layout ex_2d_single : [4, 8] tileby [
+  [4, 8]
 ]
 
-#check @dsl_3d
-#check @dsl_3d_bijective
+#check @ex_2d_single
+#check @ex_2d_single_bijective
 
--- Evaluate flat index for 3D coordinate (1, 2, 3)
-#eval LegoLean.evalLayout dsl_3d [1, 2, 3]
+/-! ### 2D row-major, identity shorthand (omit perm spec) -/
 
-/-! ### Example 9: Single tile level -/
-
-lego_full_layout dsl_single_tile : [6, 4] tileby [
-  [6, 4]
+lego_full_layout ex_2d_row : [6, 4] tileby [
+  [3, 2],
+  [2, 2]
 ]
 
-#check @dsl_single_tile
+#check @ex_2d_row
+#check @ex_2d_row_bijective
+#eval evalLayout ex_2d_row [1, 2]
 
-/-! ### Example 10: Three tile levels -/
+/-! ### 2D row-major, explicit `row` sugar -/
 
-lego_full_layout dsl_three_levels : [24, 12] tileby [
+lego_full_layout ex_2d_row_explicit : [4, 8] tileby [
+  [2, 4] with row,
+  [2, 2] with row
+]
+
+#check @ex_2d_row_explicit
+#check @ex_2d_row_explicit_bijective
+
+/-! ### 2D col-major at outer tile level -/
+
+lego_full_layout ex_2d_col : [6, 4] tileby [
+  [3, 2] with col,
+  [2, 2]
+]
+
+#check @ex_2d_col
+#check @ex_2d_col_bijective
+
+/-! ### 2D col-major everywhere -/
+
+lego_full_layout ex_2d_all_col : [4, 8] tileby [
+  [2, 4] with col,
+  [2, 2] with col
+]
+
+#check @ex_2d_all_col
+#check @ex_2d_all_col_bijective
+
+/-! ### 2D mixed row/col -/
+
+lego_full_layout ex_2d_mixed : [6, 6] tileby [
+  [3, 3] with col,
+  [2, 2] with row
+]
+
+#eval evalLayout ex_2d_mixed [0, 2]
+#guard evalLayout ex_2d_mixed [0, 2] == some 12
+#check @ex_2d_mixed_bijective
+
+/-! ### 2D three tile levels -/
+
+lego_full_layout ex_2d_three_levels : [24, 12] tileby [
   [2, 3],
   [3, 2],
   [4, 2]
 ]
 
-#check @dsl_three_levels
-#check @dsl_three_levels_bijective
+#check @ex_2d_three_levels
+#check @ex_2d_three_levels_bijective
 
-/-! ### Example 11: 6×6 with dimension swap -/
+/-! ### 2D explicit regP (dimension swap) -/
 
-lego_full_layout dsl_6x6_swap : [6, 6] tileby [
+lego_full_layout ex_2d_regp : [6, 6] tileby [
   [3, 3] with regP (Equiv.swap (0 : Fin 2) (1 : Fin 2)),
   [2, 2]
 ]
 
-#check @dsl_6x6_swap
+#check @ex_2d_regp
 
-/-! ### Example 12: Mixed row/col -/
+/-! ### 2D genP (antidiagonal bijection) -/
 
-lego_full_layout dsl_mixed_row_col : [6, 6] tileby [
-  [3, 3] with col,
-  [2, 2] with row
-]
-#eval LegoLean.evalLayout dsl_mixed_row_col [0, 2]
-#guard LegoLean.evalLayout dsl_mixed_row_col [0, 2] == some 12
-
-#check @dsl_mixed_row_col
-#check @dsl_mixed_row_col_bijective
-
-/-! ### Example 13: ExpandBy with non-identity perm -/
-
-lego_expand_layout dsl_expand_perm : [5, 5] → [6, 6] tileby [
+lego_full_layout ex_2d_genp : [6, 6] tileby [
   [3, 3] with genP (antiDiagGenP ![3, 3]),
   [2, 2]
 ]
 
-#check @dsl_expand_perm
-#check @dsl_expand_perm_layout_bijective
+#check @ex_2d_genp
+#check @ex_2d_genp_bijective
+#check @ex_2d_genp_perm_bijective
 
-/-! ### Example 14: All col (column-major everywhere) -/
+/-! ## 3D -/
 
-lego_full_layout dsl_all_col : [6, 4] tileby [
+lego_full_layout ex_3d : [8, 6, 4] tileby [
+  [2, 3, 2],
+  [4, 2, 2]
+]
+
+#check @ex_3d
+#check @ex_3d_bijective
+#eval evalLayout ex_3d [1, 2, 3]
+
+/-! ### 3D with col (full dimension reversal) -/
+
+lego_full_layout ex_3d_col : [8, 6, 4] tileby [
+  [2, 3, 2] with col,
+  [4, 2, 2]
+]
+
+#check @ex_3d_col
+#check @ex_3d_col_bijective
+
+/-! ## 2D — groupby (→ GroupBy directly) -/
+
+lego_full_layout ex_2d_groupby : [6, 4] groupby [
   [3, 2] with col,
-  [2, 2] with col
+  [2, 2]
 ]
 
-#check @dsl_all_col
-#check @dsl_all_col_bijective
+#check @ex_2d_groupby
+#check @ex_2d_groupby_bijective
 
-/-! ### Example 15: row(4, 8) — row-major 4×8 -/
+/-! ## ExpandBy -/
 
-lego_full_layout dsl_row_4x8 : [4, 8] tileby [
-  [2, 4] with row,
-  [2, 2] with row
+/-! ### ExpandBy with tileby -/
+
+lego_expand_layout ex_expand : [5, 3] → [6, 4] tileby [
+  [3, 2],
+  [2, 2]
 ]
 
-#check @dsl_row_4x8
-#check @dsl_row_4x8_bijective
-#check @dsl_row_4x8_perm_bijective
+#check @ex_expand                  -- ExpandBy 2 2
+#check @ex_expand_layout_bijective
+#eval evalLayout ex_expand [1, 2]  -- in-bounds → some
+#eval evalLayout ex_expand [5, 3]  -- out-of-bounds → none
 
-/-! ### Example 16: col(4, 8) — column-major 4×8 -/
+/-! ### ExpandBy with groupby -/
 
-lego_full_layout dsl_col_4x8 : [4, 8] tileby [
-  [2, 4] with col,
-  [2, 2] with col
+lego_expand_layout ex_expand_groupby : [5, 3] → [6, 4] groupby [
+  [3, 2],
+  [2, 2]
 ]
 
-#check @dsl_col_4x8
-#check @dsl_col_4x8_bijective
-#check @dsl_col_4x8_perm_bijective
+#check @ex_expand_groupby
+#check @ex_expand_groupby_layout_bijective
 
-/-! ### Example 17: row(4, 8) with single tile [4, 8] (no tiling, identity layout) -/
+/-! ### ExpandBy with genP (antidiagonal) -/
 
-lego_full_layout dsl_row_4x8_full : [4, 8] tileby [
-  [4, 8] with row
+lego_expand_layout ex_expand_genp : [5, 5] → [6, 6] tileby [
+  [3, 3] with genP (antiDiagGenP ![3, 3]),
+  [2, 2]
 ]
 
-#check @dsl_row_4x8_full
-#check @dsl_row_4x8_full_bijective
-#check @dsl_row_4x8_full_perm_bijective
+#check @ex_expand_genp
+#check @ex_expand_genp_layout_bijective
 
 end LegoLean.LayoutDSLExamples

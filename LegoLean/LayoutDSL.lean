@@ -11,11 +11,16 @@ to ~4 lines. The generated code reuses all existing theorems from
 
 ## Syntax
 
-### FullLayout:
+### FullLayout (tileby or groupby — same interface):
 ```
 lego_full_layout foo : [6, 4] tileby [
   [3, 2] with row,
   [2, 2] with col
+]
+
+lego_full_layout bar : [6, 4] groupby [
+  [3, 2] with col,
+  [2, 2]
 ]
 ```
 
@@ -27,7 +32,7 @@ lego_full_layout foo : [6, 4] tileby [
 ]
 ```
 
-### ExpandBy:
+### ExpandBy (tileby or groupby):
 ```
 lego_expand_layout baz : [5, 3] → [6, 4] tileby [
   [3, 2],
@@ -68,6 +73,13 @@ syntax "[" num,* "]"                     : legoTileSpec
 
 /-! ## Main syntax -/
 
+syntax (name := legoFullLayoutGB)
+  "lego_full_layout" ident " : " "[" num,* "]" " groupby " "[" legoTileSpec,* "]" : command
+
+syntax (name := legoExpandLayoutGB)
+  "lego_expand_layout" ident " : " "[" num,* "]" " → " "[" num,* "]"
+    " groupby " "[" legoTileSpec,* "]" : command
+
 syntax (name := legoFullLayout)
   "lego_full_layout" ident " : " "[" num,* "]" " tileby " "[" legoTileSpec,* "]" : command
 
@@ -85,10 +97,11 @@ private def permSpecToTerm (spec : TSyntax `legoPermSpec) (d : Nat) :
   | `(legoPermSpec| regP $t:term) => `(TilePerm.regP $t)
   | `(legoPermSpec| genP $t:term) => `(TilePerm.genP $t)
   | `(legoPermSpec| id) => `(TilePerm.regP (Equiv.refl (Fin $dLit)))
+  -- `row` = identity, `col` = full dimension reversal (i ↦ d-1-i)
   | `(legoPermSpec| row) => `(TilePerm.regP (Equiv.refl (Fin $dLit)))
   | `(legoPermSpec| col) => do
     if d < 2 then Macro.throwError "col requires at least 2 dimensions"
-    `(TilePerm.regP (Equiv.swap (0 : Fin $dLit) (1 : Fin $dLit)))
+    `(TilePerm.regP (dimRevEquiv $dLit))
   | _ => Macro.throwUnsupported
 
 private def mkVecLit (nums : Array (TSyntax `num)) : MacroM (TSyntax `term) := do
@@ -155,7 +168,7 @@ private def parseTiles (tilesArr : TSyntaxArray `legoTileSpec) (d : Nat) :
   -- index 0 as least significant (innermost). Reversing aligns the two.
   return (tileShapeTerms.reverse, permTerms.reverse)
 
-/-! ## Macro rules -/
+/-! ## Macro rules: tileby → TileBy -/
 
 macro_rules
   | `(command| lego_full_layout $name:ident : [ $shapeDims,* ] tileby [ $tiles,* ]) => do
@@ -172,32 +185,28 @@ macro_rules
 
     let nameStr := name.getId.toString
     let shapesId := mkIdent (Name.mkSimple (nameStr ++ "__shapes"))
-    let orderById := mkIdent (Name.mkSimple (nameStr ++ "__orderBy"))
-    let groupById := mkIdent (Name.mkSimple (nameStr ++ "__groupBy"))
+    let tileById := mkIdent (Name.mkSimple (nameStr ++ "__tileBy"))
     let bijId := mkIdent (Name.mkSimple (nameStr ++ "_bijective"))
     let permBijId := mkIdent (Name.mkSimple (nameStr ++ "_perm_bijective"))
 
     let cmd1 ← `(command|
       private def $shapesId : Fin $qLit → Shape $dLit := $shapesVecTerm)
     let cmd2 ← `(command|
-      def $orderById : OrderBy $dLit $qLit :=
+      def $tileById : TileBy $dLit $qLit :=
         ⟨$shapesId, $permsBody⟩)
     let cmd3 ← `(command|
-      def $groupById : GroupBy $dLit $qLit :=
-        GroupBy.ofOrderBy $orderById)
-    let cmd4 ← `(command|
       def $name : FullLayout $dLit $qLit :=
-        ⟨$logicalShapeTerm, $groupById,
-         by intro i
-            show ∏ k : Fin $qLit, $shapesId k i = $logicalShapeTerm i
-            fin_cases i <;> native_decide⟩)
-    let cmd5 ← `(command|
+        TileBy.toFullLayout $tileById $logicalShapeTerm
+          (by intro i
+              show ∏ k : Fin $qLit, $shapesId k i = $logicalShapeTerm i
+              fin_cases i <;> native_decide))
+    let cmd4 ← `(command|
       theorem $bijId : Function.Bijective (FullLayout.toEquiv $name) :=
         FullLayout.bijective $name)
-    let cmd6 ← `(command|
+    let cmd5 ← `(command|
       theorem $permBijId : Function.Bijective (FullLayout.toPermutation $name) :=
         Equiv.bijective (FullLayout.toPermutation $name))
-    return mkNullNode #[cmd1, cmd2, cmd3, cmd4, cmd5, cmd6]
+    return mkNullNode #[cmd1, cmd2, cmd3, cmd4, cmd5]
 
 macro_rules
   | `(command| lego_expand_layout $name:ident : [ $origDims,* ] → [ $extDims,* ]
@@ -220,30 +229,106 @@ macro_rules
 
     let nameStr := name.getId.toString
     let shapesId := mkIdent (Name.mkSimple (nameStr ++ "__shapes"))
-    let orderById := mkIdent (Name.mkSimple (nameStr ++ "__orderBy"))
+    let tileById := mkIdent (Name.mkSimple (nameStr ++ "__tileBy"))
+    let bijId := mkIdent (Name.mkSimple (nameStr ++ "_layout_bijective"))
+
+    let cmd1 ← `(command|
+      private def $shapesId : Fin $qLit → Shape $dLit := $shapesVecTerm)
+    let cmd2 ← `(command|
+      def $tileById : TileBy $dLit $qLit :=
+        ⟨$shapesId, $permsBody⟩)
+    let cmd3 ← `(command|
+      def $name : ExpandBy $dLit $qLit :=
+        ⟨$origShapeTerm, $extShapeTerm, TileBy.toGroupBy $tileById,
+         by intro i; fin_cases i <;> simp,
+         by intro i
+            show ∏ k : Fin $qLit, $shapesId k i = $extShapeTerm i
+            fin_cases i <;> native_decide⟩)
+    let cmd4 ← `(command|
+      theorem $bijId : Function.Bijective (GroupBy.toEquiv (ExpandBy.layout $name)) :=
+        ExpandBy.layout_bijective $name)
+    return mkNullNode #[cmd1, cmd2, cmd3, cmd4]
+
+/-! ## Macro rules: groupby → GroupBy directly -/
+
+macro_rules
+  | `(command| lego_full_layout $name:ident : [ $shapeDims,* ] groupby [ $tiles,* ]) => do
+    let shapeDimsArr := shapeDims.getElems
+    let tilesArr := tiles.getElems
+    let d := shapeDimsArr.size
+    let q := tilesArr.size
+    let dLit := Syntax.mkNumLit (toString d)
+    let qLit := Syntax.mkNumLit (toString q)
+    let logicalShapeTerm ← mkVecLit shapeDimsArr
+    let (tileShapeTerms, permTerms) ← parseTiles tilesArr d
+    let shapesVecTerm ← mkTermVecLit tileShapeTerms
+    let permsBody ← mkPermsBody permTerms
+
+    let nameStr := name.getId.toString
+    let shapesId := mkIdent (Name.mkSimple (nameStr ++ "__shapes"))
+    let groupById := mkIdent (Name.mkSimple (nameStr ++ "__groupBy"))
+    let bijId := mkIdent (Name.mkSimple (nameStr ++ "_bijective"))
+    let permBijId := mkIdent (Name.mkSimple (nameStr ++ "_perm_bijective"))
+
+    let cmd1 ← `(command|
+      private def $shapesId : Fin $qLit → Shape $dLit := $shapesVecTerm)
+    let cmd2 ← `(command|
+      def $groupById : GroupBy $dLit $qLit :=
+        GroupBy.ofOrderBy ⟨$shapesId, $permsBody⟩)
+    let cmd3 ← `(command|
+      def $name : FullLayout $dLit $qLit :=
+        ⟨$logicalShapeTerm, $groupById,
+          by intro i
+             show ∏ k : Fin $qLit, $shapesId k i = $logicalShapeTerm i
+             fin_cases i <;> native_decide⟩)
+    let cmd4 ← `(command|
+      theorem $bijId : Function.Bijective (FullLayout.toEquiv $name) :=
+        FullLayout.bijective $name)
+    let cmd5 ← `(command|
+      theorem $permBijId : Function.Bijective (FullLayout.toPermutation $name) :=
+        Equiv.bijective (FullLayout.toPermutation $name))
+    return mkNullNode #[cmd1, cmd2, cmd3, cmd4, cmd5]
+
+macro_rules
+  | `(command| lego_expand_layout $name:ident : [ $origDims,* ] → [ $extDims,* ]
+      groupby [ $tiles,* ]) => do
+    let origDimsArr := origDims.getElems
+    let extDimsArr := extDims.getElems
+    let tilesArr := tiles.getElems
+    let d := extDimsArr.size
+    let q := tilesArr.size
+    if origDimsArr.size != d then
+      Macro.throwError
+        s!"original shape dimension mismatch: expected {d}, got {origDimsArr.size}"
+    let dLit := Syntax.mkNumLit (toString d)
+    let qLit := Syntax.mkNumLit (toString q)
+    let origShapeTerm ← mkVecLit origDimsArr
+    let extShapeTerm ← mkVecLit extDimsArr
+    let (tileShapeTerms, permTerms) ← parseTiles tilesArr d
+    let shapesVecTerm ← mkTermVecLit tileShapeTerms
+    let permsBody ← mkPermsBody permTerms
+
+    let nameStr := name.getId.toString
+    let shapesId := mkIdent (Name.mkSimple (nameStr ++ "__shapes"))
     let groupById := mkIdent (Name.mkSimple (nameStr ++ "__groupBy"))
     let bijId := mkIdent (Name.mkSimple (nameStr ++ "_layout_bijective"))
 
     let cmd1 ← `(command|
       private def $shapesId : Fin $qLit → Shape $dLit := $shapesVecTerm)
     let cmd2 ← `(command|
-      def $orderById : OrderBy $dLit $qLit :=
-        ⟨$shapesId, $permsBody⟩)
-    let cmd3 ← `(command|
       def $groupById : GroupBy $dLit $qLit :=
-        GroupBy.ofOrderBy $orderById)
-    let cmd4 ← `(command|
+        GroupBy.ofOrderBy ⟨$shapesId, $permsBody⟩)
+    let cmd3 ← `(command|
       def $name : ExpandBy $dLit $qLit :=
         ⟨$origShapeTerm, $extShapeTerm, $groupById,
          by intro i; fin_cases i <;> simp,
          by intro i
             show ∏ k : Fin $qLit, $shapesId k i = $extShapeTerm i
             fin_cases i <;> native_decide⟩)
-    let cmd5 ← `(command|
+    let cmd4 ← `(command|
       theorem $bijId : Function.Bijective (GroupBy.toEquiv (ExpandBy.layout $name)) :=
         ExpandBy.layout_bijective $name)
-    return mkNullNode #[cmd1, cmd2, cmd3, cmd4, cmd5]
-
+    return mkNullNode #[cmd1, cmd2, cmd3, cmd4]
 
 /-! ## Layout Evaluation -/
 
