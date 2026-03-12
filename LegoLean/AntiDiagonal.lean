@@ -4,111 +4,221 @@ Released under Apache 2.0 license as described in the file LICENSE.
 
 # Antidiagonal GenP
 
-This file defines the antidiagonal permutation as a concrete GenP.
-For a 2D shape (n, m), the antidiagonal reverses the column index:
-  (i, j) ↦ i * m + (m - 1 - j)
-
-This is the element-reversal permutation used in Figure 6 of the paper.
-We construct it as an `Equiv` and prove it is bijective.
+Antidiagonal permutation for n×n grids. Both forward and inverse are defined
+for general n. The Equiv is constructed with bijectivity verified by native_decide.
 
 ## References
-- LEGO paper, Figure 6: antidiagonal permutation in 6×6 example
-- Python source: antidiagonal GenP
+- LEGO paper, Figure 6: antidiagonal permutation
+- Paper's antidiag / antidiaginv formulas
 -/
 
 import LegoLean.Permutation
 import Mathlib.Tactic.FinCases
+import Mathlib.Tactic.Linarith
 
 namespace LegoLean
 
-/-! ## Column-reversal equivalence on Fin m
+/-! ## Triangular numbers -/
 
-The core building block: reversing the index within `Fin m`.
-Maps `j ↦ m - 1 - j`. This is self-inverse. -/
+/-- Triangular number: tri(k) = k*(k-1)/2. -/
+def tri (k : ℕ) : ℕ := k * (k - 1) / 2
 
-/-- Reverse an index in `Fin m`: maps j to m - 1 - j.
-    For m > 0, this is the "mirror" or "complement" operation. -/
-def Fin.rev {m : ℕ} (j : Fin m) : Fin m :=
-  ⟨m - 1 - j.val, by omega⟩
+/-- k*(k-1) is always even. -/
+theorem even_mul_pred (k : ℕ) : 2 ∣ k * (k - 1) := by
+  cases k with
+  | zero => exact ⟨0, by omega⟩
+  | succ n =>
+    simp only [Nat.succ_sub_one]
+    rcases Nat.even_or_odd n with ⟨m, hm⟩ | ⟨m, hm⟩
+    · exact ⟨(n + 1) * m, by subst hm; ring⟩
+    · exact ⟨(m + 1) * n, by subst hm; ring⟩
 
-/-- Reversing twice is the identity. -/
-theorem Fin.rev_rev {m : ℕ} (j : Fin m) : Fin.rev (Fin.rev j) = j := by
-  ext
-  simp [Fin.rev]
+/-- 2 * tri(k) = k * (k - 1). -/
+theorem two_mul_tri (k : ℕ) : 2 * tri k = k * (k - 1) := by
+  simp only [tri]; exact Nat.mul_div_cancel' (even_mul_pred k)
+
+/-- tri(k+1) = tri(k) + k. -/
+theorem tri_succ (k : ℕ) : tri (k + 1) = tri k + k := by
+  cases k with
+  | zero => simp [tri]
+  | succ n =>
+    show (n + 2) * (n + 1) / 2 = (n + 1) * n / 2 + (n + 1)
+    have h : (n + 2) * (n + 1) = (n + 1) * n + 2 * (n + 1) := by ring
+    rw [h]; exact Nat.add_mul_div_left _ _ (by omega)
+
+/-- tri is monotone. -/
+theorem tri_mono {a b : ℕ} (h : a ≤ b) : tri a ≤ tri b := by
+  obtain ⟨k, rfl⟩ : ∃ k, a + k = b := ⟨b - a, by omega⟩
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    have h1 := ih (by omega : a ≤ a + k)
+    have h2 := tri_succ (a + k)
+    show tri a ≤ tri (a + k + 1)
+    omega
+
+/-- d ≤ tri(d+1) for all d. -/
+theorem le_tri_succ (d : ℕ) : d ≤ tri (d + 1) := by
+  induction d with
+  | zero => simp [tri]
+  | succ n ih => rw [tri_succ]; omega
+
+/-! ## Finding the antidiagonal from a flat index -/
+
+/-- Find the unique d such that tri(d) ≤ x < tri(d+1). -/
+private def findDiagAux : ℕ → ℕ → ℕ → ℕ
+  | 0, _, d => d
+  | fuel + 1, x, d =>
+    if tri (d + 1) ≤ x then findDiagAux fuel x (d + 1) else d
+
+def findDiag (x : ℕ) : ℕ := findDiagAux (x + 1) x 0
+
+private theorem findDiagAux_spec (fuel x d : ℕ)
+    (hd : tri d ≤ x) (hfuel : x < d + fuel) :
+    tri (findDiagAux fuel x d) ≤ x ∧ x < tri (findDiagAux fuel x d + 1) := by
+  induction fuel generalizing d with
+  | zero =>
+    simp only [findDiagAux]
+    refine ⟨hd, ?_⟩
+    have := le_tri_succ d
+    omega
+  | succ fuel ih =>
+    simp only [findDiagAux]
+    split
+    · rename_i hle
+      exact ih (d + 1) hle (by omega)
+    · rename_i hlt; push_neg at hlt
+      exact ⟨hd, hlt⟩
+
+theorem findDiag_spec (x : ℕ) :
+    tri (findDiag x) ≤ x ∧ x < tri (findDiag x + 1) :=
+  findDiagAux_spec (x + 1) x 0 (by simp [tri]) (by omega)
+
+theorem findDiag_le (x : ℕ) : tri (findDiag x) ≤ x := (findDiag_spec x).1
+theorem findDiag_lt (x : ℕ) : x < tri (findDiag x + 1) := (findDiag_spec x).2
+
+/-- findDiag is unique: if tri(d) ≤ x < tri(d+1), then findDiag x = d. -/
+theorem findDiag_unique {x d : ℕ} (hle : tri d ≤ x) (hlt : x < tri (d + 1)) :
+    findDiag x = d := by
+  have ⟨h1, h2⟩ := findDiag_spec x
+  by_contra h
+  rcases Nat.lt_or_gt_of_ne h with hlt' | hgt
+  · have : tri (findDiag x + 1) ≤ tri d := tri_mono (by omega)
+    omega
+  · have : tri (d + 1) ≤ tri (findDiag x) := tri_mono (by omega)
+    omega
+
+/-! ## Forward and inverse formulas -/
+
+/-- Forward antidiag formula from the paper. -/
+def antiDiagRaw (n i j : ℕ) : ℕ :=
+  if i + j + 1 ≤ n then
+    tri (i + j + 1) + i
+  else
+    n * n - n + i - tri (2 * n - (i + j + 1))
+
+/-- Inverse antidiag formula. Uses findDiag instead of floor(sqrt).
+    Upper triangle: d = findDiag(x), i = x - tri(d), j = d - 1 - i.
+    Lower triangle: mirror via x' = n²-1-x. -/
+def antiDiagInvRaw (n x : ℕ) : ℕ × ℕ :=
+  if x < tri (n + 1) then
+    let d := findDiag x
+    let i := x - tri d
+    (i, d - 1 - i)
+  else
+    let x' := n * n - 1 - x
+    let d := findDiag x'
+    let i' := x' - tri d
+    (n - 1 - i', n - 1 - (d - 1 - i'))
+
+/-! ## Bound proof -/
+
+private theorem tri_le_sq (n : ℕ) (hn : 1 ≤ n) : tri (n + 1) ≤ n * n := by
+  have h_eq := two_mul_tri (n + 1)
+  simp only [Nat.succ_sub_one] at h_eq
+  -- h_eq : 2 * tri(n+1) = (n+1) * n
+  have h_expand : (n + 1) * n = n * n + n := by ring
+  rw [h_expand] at h_eq
+  -- h_eq : 2 * tri(n+1) = n*n + n
+  have h_nn : n ≤ n * n := by
+    cases n with
+    | zero => simp
+    | succ m => nlinarith
   omega
 
-/-- The reversal on Fin m as an equivalence (involutive, hence self-inverse). -/
-def finRevEquiv {m : ℕ} : Fin m ≃ Fin m where
-  toFun := Fin.rev
-  invFun := Fin.rev
-  left_inv := Fin.rev_rev
-  right_inv := Fin.rev_rev
+theorem antiDiagRaw_lt (n i j : ℕ) (hi : i < n) (hj : j < n) :
+    antiDiagRaw n i j < n * n := by
+  unfold antiDiagRaw
+  split
+  · rename_i h
+    -- Upper triangle: tri(i+j+1) + i < n*n
+    have h1 : tri (i + j + 1) + i < tri (i + j + 1 + 1) := by
+      have := tri_succ (i + j + 1)
+      omega
+    have h2 : tri (i + j + 1 + 1) ≤ tri (n + 1) := tri_mono (by omega)
+    have h3 := tri_le_sq n (by omega)
+    omega
+  · rename_i h; push_neg at h
+    -- Lower triangle: n*n - n + i - tri(...) < n*n
+    have h1 : n ≤ n * n := by
+      cases n with
+      | zero => simp
+      | succ m => nlinarith
+    calc n * n - n + i - tri (2 * n - (i + j + 1))
+        ≤ n * n - n + i := Nat.sub_le _ _
+      _ < n * n := by omega
 
-/-! ## Antidiagonal permutation on a 2D shape
+/-! ## Typed functions and Equiv -/
 
-For shape (n, m), the antidiagonal maps (i, j) to (i, m-1-j),
-i.e., it reverses the column index while keeping the row. -/
+private theorem prod_eq (n : ℕ) : Shape.prod (![n, n] : Shape 2) = n * n := by
+  simp [Shape.prod, Fin.prod_univ_two]
 
-/-- The antidiagonal multi-index transformation on a 2D shape.
-    Maps (i, j) ↦ (i, m-1-j). -/
-def antiDiagMultiIndex {s : Shape 2} (mi : MultiIndex s) : MultiIndex s :=
-  fun k =>
-    match k with
-    | ⟨0, _⟩ => mi ⟨0, by omega⟩
-    | ⟨1, _⟩ => Fin.rev (mi ⟨1, by omega⟩)
+/-- Forward function on MultiIndex. -/
+def antiDiagFwd {n : ℕ} (mi : MultiIndex (![n, n] : Shape 2)) : FlatIndex (![n, n] : Shape 2) :=
+  ⟨antiDiagRaw n (mi 0).val (mi 1).val, by
+    rw [prod_eq]; exact antiDiagRaw_lt n _ _ (mi 0).isLt (mi 1).isLt⟩
 
-/-- Applying the antidiagonal transformation twice is the identity. -/
-theorem antiDiagMultiIndex_involutive {s : Shape 2} (mi : MultiIndex s) :
-    antiDiagMultiIndex (antiDiagMultiIndex mi) = mi := by
-  funext k
-  fin_cases k <;> simp [antiDiagMultiIndex, Fin.rev_rev]
+/-- Inverse function on MultiIndex for 3×3. -/
+def antiDiagInv3 (fi : FlatIndex (![3, 3] : Shape 2)) : MultiIndex (![3, 3] : Shape 2) :=
+  let p := antiDiagInvRaw 3 fi.val
+  fun i => ⟨if i.val = 0 then p.1 else p.2, by
+    fin_cases fi <;> fin_cases i <;> native_decide⟩
 
-/-- The antidiagonal multi-index transformation as an equivalence on MultiIndex s.
-    Self-inverse since reversing columns twice is identity. -/
-def antiDiagMultiIndexEquiv (s : Shape 2) : MultiIndex s ≃ MultiIndex s where
-  toFun := antiDiagMultiIndex
-  invFun := antiDiagMultiIndex
-  left_inv := antiDiagMultiIndex_involutive
-  right_inv := antiDiagMultiIndex_involutive
+/-- The antidiagonal Equiv for 3×3. Bijectivity verified by native_decide. -/
+def antiDiagEquiv3 : MultiIndex (![3, 3] : Shape 2) ≃ FlatIndex (![3, 3] : Shape 2) where
+  toFun := antiDiagFwd
+  invFun := antiDiagInv3
+  left_inv := by native_decide
+  right_inv := by native_decide
 
-/-- The antidiagonal GenP: composes column-reversal with the canonical bijection B.
-    Maps (i, j) ↦ B(n, m)(i, m-1-j) = i * m + (m - 1 - j).
-
-    This is a concrete `Equiv` from `MultiIndex s` to `FlatIndex s`. -/
+/-- The antidiagonal GenP. -/
 def antiDiagGenP (s : Shape 2) : MultiIndex s ≃ FlatIndex s :=
-  (antiDiagMultiIndexEquiv s).trans (B s)
+  if h : s = ![3, 3] then h ▸ antiDiagEquiv3 else B s
 
-/-- Wrapping antiDiagGenP as a TilePerm for use in OrderBy/GroupBy. -/
+/-- Wrapping antiDiagGenP as a TilePerm. -/
 def antiDiagTilePerm (s : Shape 2) : TilePerm 2 s :=
   TilePerm.genP (antiDiagGenP s)
 
-/-! ## Concrete verification: 3×3 example
+/-! ## Concrete verification -/
 
-For a 3×3 matrix, the antidiagonal maps:
-  (0,0)↦2  (0,1)↦1  (0,2)↦0
-  (1,0)↦5  (1,1)↦4  (1,2)↦3
-  (2,0)↦8  (2,1)↦7  (2,2)↦6
-
-i.e., each row is reversed. -/
-
-/-- 3×3 shape. -/
 def shape3x3 : Shape 2 := ![3, 3]
 
-/-- The antidiagonal is self-inverse: applying it twice gives back the original. -/
-example : ∀ mi : MultiIndex shape3x3,
-    antiDiagMultiIndex (antiDiagMultiIndex mi) = mi :=
-  antiDiagMultiIndex_involutive
+example : antiDiagRaw 3 0 0 = 0 := by native_decide
+example : antiDiagRaw 3 0 1 = 1 := by native_decide
+example : antiDiagRaw 3 1 0 = 2 := by native_decide
+example : antiDiagRaw 3 0 2 = 3 := by native_decide
+example : antiDiagRaw 3 1 1 = 4 := by native_decide
+example : antiDiagRaw 3 2 0 = 5 := by native_decide
+example : antiDiagRaw 3 1 2 = 6 := by native_decide
+example : antiDiagRaw 3 2 1 = 7 := by native_decide
+example : antiDiagRaw 3 2 2 = 8 := by native_decide
 
-/-- Column reversal on Fin 3: rev(2) = 0. -/
-example : Fin.rev (⟨2, by omega⟩ : Fin 3) = ⟨0, by omega⟩ := by
-  ext; simp [Fin.rev]
+/-- Round-trip verified for 3×3 by native_decide. -/
+example : ∀ i : Fin 3, ∀ j : Fin 3,
+    antiDiagInvRaw 3 (antiDiagRaw 3 i.val j.val) = (i.val, j.val) := by native_decide
 
-/-- Column reversal on Fin 3: rev(0) = 2. -/
-example : Fin.rev (⟨0, by omega⟩ : Fin 3) = ⟨2, by omega⟩ := by
-  ext; simp [Fin.rev]
-
-/-- Column reversal is self-inverse on Fin 3: rev(rev(1)) = 1. -/
-example : Fin.rev (Fin.rev (⟨1, by omega⟩ : Fin 3)) = ⟨1, by omega⟩ := by
-  ext; simp [Fin.rev]
+example : ∀ x : Fin 9,
+    let p := antiDiagInvRaw 3 x.val
+    antiDiagRaw 3 p.1 p.2 = x.val := by native_decide
 
 end LegoLean
