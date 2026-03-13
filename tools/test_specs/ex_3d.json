@@ -1,0 +1,10 @@
+{
+  "name": "gen_3d",
+  "kind": "full_layout",
+  "shape": [8, 6, 4],
+  "tiling_mode": "tileby",
+  "tiles": [
+    { "dims": [2, 3, 2] },
+    { "dims": [4, 2, 2] }
+  ]
+}

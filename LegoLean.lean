@@ -9,3 +9,6 @@ import LegoLean.Examples
 import LegoLean.AntiDiagonal
 import LegoLean.LayoutDSL
 import LegoLean.LayoutDSLExamples
+import LegoLean.TileByLowering
+import LegoLean.Adapter.OracleLib
+import LegoLean.Adapter.Generated

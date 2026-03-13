@@ -13,3 +13,7 @@ scope = "leanprover-community"
 
 [[lean_lib]]
 name = "LegoLean"
+
+[[lean_exe]]
+name = "oracle"
+root = "LegoLean.Adapter.Oracle"

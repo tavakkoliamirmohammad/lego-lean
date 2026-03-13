@@ -2,3 +2,7 @@
 /lake-packages
 /.lake
 /lakefile.olean
+
+# Auto-generated layout files (recreated by tools/lego_codegen.py)
+LegoLean/Adapter/Generated/*.lean
+!LegoLean/Adapter/Generated/.gitkeep

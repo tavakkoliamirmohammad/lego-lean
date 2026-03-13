@@ -1,0 +1,10 @@
+{
+  "name": "gen_2d_regp",
+  "kind": "full_layout",
+  "shape": [6, 6],
+  "tiling_mode": "tileby",
+  "tiles": [
+    { "dims": [3, 3], "perm": { "type": "regP", "sigma": [1, 0] } },
+    { "dims": [2, 2] }
+  ]
+}
