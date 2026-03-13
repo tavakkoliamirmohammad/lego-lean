@@ -1,0 +1,13 @@
+{
+  "name": "gen_2d_row",
+  "kind": "full_layout",
+  "shape": [6, 4],
+  "tiling_mode": "tileby",
+  "tiles": [
+    { "dims": [3, 2] },
+    { "dims": [2, 2] }
+  ],
+  "checks": [
+    { "coords": [0, 0], "expected": 0 }
+  ]
+}

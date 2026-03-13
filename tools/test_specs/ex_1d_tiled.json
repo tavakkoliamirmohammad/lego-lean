@@ -1,0 +1,14 @@
+{
+  "name": "gen_1d_tiled",
+  "kind": "full_layout",
+  "shape": [12],
+  "tiling_mode": "tileby",
+  "tiles": [
+    { "dims": [3] },
+    { "dims": [4] }
+  ],
+  "checks": [
+    { "coords": [0], "expected": 0 },
+    { "coords": [11], "expected": 11 }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "gen_expand",
+  "kind": "expand_layout",
+  "shape": [6, 4],
+  "orig_shape": [5, 3],
+  "tiling_mode": "tileby",
+  "tiles": [
+    { "dims": [3, 2] },
+    { "dims": [2, 2] }
+  ]
+}

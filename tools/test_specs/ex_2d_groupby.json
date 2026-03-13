@@ -1,0 +1,10 @@
+{
+  "name": "gen_2d_groupby",
+  "kind": "full_layout",
+  "shape": [6, 4],
+  "tiling_mode": "groupby",
+  "tiles": [
+    { "dims": [3, 2], "perm": { "type": "col" } },
+    { "dims": [2, 2] }
+  ]
+}

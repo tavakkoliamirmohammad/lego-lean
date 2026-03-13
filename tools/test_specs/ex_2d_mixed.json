@@ -1,0 +1,10 @@
+{
+  "name": "gen_2d_mixed",
+  "kind": "full_layout",
+  "shape": [6, 6],
+  "tiling_mode": "tileby",
+  "tiles": [
+    { "dims": [3, 3], "perm": { "type": "col" } },
+    { "dims": [2, 2], "perm": { "type": "row" } }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "gen_2d_genp",
+  "kind": "full_layout",
+  "shape": [6, 6],
+  "tiling_mode": "tileby",
+  "tiles": [
+    { "dims": [2, 2] },
+    {
+      "dims": [3, 3],
+      "perm": {
+        "type": "genP",
+        "table":     [0, 1, 3, 2, 4, 6, 5, 7, 8],
+        "inv_table": [0, 1, 3, 2, 4, 6, 5, 7, 8]
+      }
+    }
+  ]
+}

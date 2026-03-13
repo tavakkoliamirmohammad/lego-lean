@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LEGO Layout Specification",
+  "description": "JSON interchange format for LEGO layout algebra specifications. Used by lego_codegen.py to generate Lean 4 source with bijectivity proofs.",
+  "type": "object",
+  "required": ["name", "kind", "shape", "tiles"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+      "description": "Layout identifier (valid Lean name, snake_case recommended)"
+    },
+    "kind": {
+      "enum": ["full_layout", "expand_layout"],
+      "description": "full_layout for exact tiling, expand_layout for padded shapes"
+    },
+    "shape": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1 },
+      "minItems": 1,
+      "maxItems": 6,
+      "description": "Logical shape (or extended shape for expand_layout)"
+    },
+    "orig_shape": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1 },
+      "minItems": 1,
+      "maxItems": 6,
+      "description": "Original (pre-padding) shape. Required for expand_layout."
+    },
+    "tiling_mode": {
+      "enum": ["tileby", "groupby"],
+      "default": "tileby",
+      "description": "tileby generates TileBy (recommended), groupby generates GroupBy directly"
+    },
+    "tiles": {
+      "type": "array",
+      "description": "Tiling levels, outermost first. Product of tile dims along each axis must equal the shape.",
+      "items": {
+        "type": "object",
+        "required": ["dims"],
+        "properties": {
+          "dims": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 1 },
+            "description": "Tile dimensions (must match shape dimensionality)"
+          },
+          "perm": {
+            "type": "object",
+            "description": "Permutation spec for this tiling level. Defaults to row (identity).",
+            "oneOf": [
+              {
+                "properties": { "type": { "const": "row" } },
+                "required": ["type"],
+                "additionalProperties": false
+              },
+              {
+                "properties": { "type": { "const": "col" } },
+                "required": ["type"],
+                "additionalProperties": false
+              },
+              {
+                "properties": {
+                  "type": { "const": "regP" },
+                  "sigma": {
+                    "type": "array",
+                    "items": { "type": "integer", "minimum": 0 },
+                    "description": "Dimension permutation as a list: sigma[i] = j means dim i maps to position j"
+                  }
+                },
+                "required": ["type", "sigma"],
+                "additionalProperties": false
+              },
+              {
+                "properties": {
+                  "type": { "const": "genP" },
+                  "table": {
+                    "type": "array",
+                    "items": { "type": "integer", "minimum": 0 },
+                    "description": "Forward flat-index permutation: table[i] = j"
+                  },
+                  "inv_table": {
+                    "type": "array",
+                    "items": { "type": "integer", "minimum": 0 },
+                    "description": "Inverse flat-index permutation: inv_table[j] = i"
+                  }
+                },
+                "required": ["type", "table", "inv_table"],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 5
+    },
+    "checks": {
+      "type": "array",
+      "description": "Optional inline assertions. Each generates a #guard in the Lean file, checked at build time.",
+      "items": {
+        "type": "object",
+        "required": ["coords", "expected"],
+        "properties": {
+          "coords": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 0 },
+            "description": "Multi-index coordinates"
+          },
+          "expected": {
+            "type": ["integer", "null"],
+            "description": "Expected flat index, or null for out-of-bounds"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "if": {
+    "properties": { "kind": { "const": "expand_layout" } }
+  },
+  "then": {
+    "required": ["orig_shape"]
+  }
+}

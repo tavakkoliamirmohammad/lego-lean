@@ -126,8 +126,8 @@ lego_full_layout ex_2d_regp : [6, 6] tileby [
 /-! ### 2D genP (antidiagonal bijection) -/
 
 lego_full_layout ex_2d_genp : [6, 6] tileby [
-  [3, 3] with genP (antiDiagGenP ![3, 3]),
-  [2, 2]
+  [2, 2] with row,
+  [3, 3] with genP (antiDiagGenP ![3, 3])
 ]
 
 #check @ex_2d_genp

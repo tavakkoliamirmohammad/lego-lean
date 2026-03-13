@@ -1,0 +1,11 @@
+{
+  "name": "gen_2d_three_levels",
+  "kind": "full_layout",
+  "shape": [24, 12],
+  "tiling_mode": "tileby",
+  "tiles": [
+    { "dims": [2, 3] },
+    { "dims": [3, 2] },
+    { "dims": [4, 2] }
+  ]
+}

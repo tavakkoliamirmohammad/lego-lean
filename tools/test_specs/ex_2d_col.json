@@ -1,0 +1,15 @@
+{
+  "name": "gen_2d_col",
+  "kind": "full_layout",
+  "shape": [6, 4],
+  "tiling_mode": "tileby",
+  "tiles": [
+    { "dims": [3, 2], "perm": { "type": "col" } },
+    { "dims": [2, 2] }
+  ],
+  "checks": [
+    { "coords": [0, 0], "expected": 0 },
+    { "coords": [0, 1], "expected": 1 },
+    { "coords": [0, 2], "expected": 12 }
+  ]
+}
