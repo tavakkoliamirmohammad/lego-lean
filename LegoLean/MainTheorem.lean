@@ -63,8 +63,8 @@ theorem lego_inverse_roundtrip (d q : ℕ) (gb : GroupBy d q)
     The number of multi-indices equals the number of flat indices. -/
 theorem lego_card_eq (d q : ℕ) (gb : GroupBy d q) :
     Fintype.card ((k : Fin q) → MultiIndex (gb.shapes k)) =
-    Fintype.card (Fin gb.totalElements) := by
-  exact Fintype.card_congr gb.toEquiv
+    Fintype.card (Fin gb.totalElements) :=
+  Fintype.card_congr gb.toEquiv
 
 /-- **ExpandBy preserves bijectivity on the extended space.**
     When partial tiles are used, the underlying layout on the extended

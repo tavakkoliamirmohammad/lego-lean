@@ -139,8 +139,8 @@ def CoalescedWithin {n : ℕ} (cfg : GpuConfig) (tl : ThreadLayout cfg n) (k : �
 /-- Perfect coalescing implies 1-line coalescing. -/
 theorem isCoalesced_coalescedWithin {n : ℕ} (cfg : GpuConfig)
     (tl : ThreadLayout cfg n) (h : IsCoalesced cfg tl) :
-    CoalescedWithin cfg tl 1 := by
-  exact ⟨(tl.addressMap ⟨0, cfg.hWarpPos⟩).val / cacheLineElements cfg,
+    CoalescedWithin cfg tl 1 :=
+  ⟨(tl.addressMap ⟨0, cfg.hWarpPos⟩).val / cacheLineElements cfg,
     fun t => by rw [h t]; omega⟩
 
 /-- If all addresses lie in [base, base + cacheLineElements), they are coalesced. -/
@@ -164,7 +164,8 @@ theorem coalesced_of_range {n : ℕ} (cfg : GpuConfig) (tl : ThreadLayout cfg n)
     -- (cacheLineElements cfg * k + r) / cacheLineElements cfg
     -- = r / cacheLineElements cfg + k   (by Nat.add_mul_div_left)
     -- = 0 + k = k                       (by Nat.div_eq_of_lt)
-    conv_lhs => rw [show cacheLineElements cfg * k + r = r + cacheLineElements cfg * k from by omega]
+    conv_lhs =>
+      rw [show cacheLineElements cfg * k + r = r + cacheLineElements cfg * k from by omega]
     rw [Nat.add_mul_div_left r k hCLE, Nat.div_eq_of_lt hr, Nat.zero_add]
   exact (key _ hBaseT.1 hBaseT.2).trans (key _ hBase0.1 hBase0.2).symm
 
@@ -258,7 +259,8 @@ theorem threadLayout_fullLayout_injective {d q : ℕ}
     (cfg : GpuConfig) (fl : FullLayout d q)
     (threadDim : Fin d) (hFit : cfg.warpSize ≤ fl.logicalShape threadDim)
     (defaultIdx : MultiIndex fl.logicalShape) :
-    Function.Injective (ThreadLayout.ofFullLayout1D cfg fl threadDim hFit defaultIdx).addressMap := by
+    Function.Injective
+      (ThreadLayout.ofFullLayout1D cfg fl threadDim hFit defaultIdx).addressMap := by
   intro t₁ t₂ heq
   simp only [ThreadLayout.ofFullLayout1D] at heq
   have hinj := fl.toEquiv.injective heq

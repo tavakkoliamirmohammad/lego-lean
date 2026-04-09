@@ -21,7 +21,8 @@ import LegoLean.GroupBy
 namespace LegoLean
 
 /-- Predicate: a multi-index is in bounds with respect to the original (unextended) shape. -/
-def InBounds {d : ℕ} {extShape : Shape d} (mi : MultiIndex extShape) (origShape : Shape d) : Prop :=
+def InBounds {d : ℕ} {extShape : Shape d} (mi : MultiIndex extShape)
+    (origShape : Shape d) : Prop :=
   ∀ i, (mi i).val < origShape i
 
 instance {d : ℕ} {extShape : Shape d} (mi : MultiIndex extShape) (origShape : Shape d) :

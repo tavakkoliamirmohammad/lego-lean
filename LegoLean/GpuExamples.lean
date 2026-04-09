@@ -181,6 +181,7 @@ def threadLayout_64x32 : ThreadLayout GpuConfig.standard fullLayout_64x32.layout
 
 theorem threadLayout_64x32_injective :
     Function.Injective threadLayout_64x32.addressMap :=
-  threadLayout_fullLayout_injective GpuConfig.standard fullLayout_64x32 ⟨1, by omega⟩ _ defaultIdx_64x32
+  threadLayout_fullLayout_injective GpuConfig.standard fullLayout_64x32
+    ⟨1, by omega⟩ _ defaultIdx_64x32
 
 end LegoLean.GpuExamples

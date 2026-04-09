@@ -294,7 +294,8 @@ theorem example_6x6_paper_full_bijectivity : Function.Bijective fullLayout_6x6_p
   fullLayout_6x6_paper.bijective
 
 /-- The paper's 6×6 full layout permutation is bijective. -/
-theorem example_6x6_paper_perm_bijectivity : Function.Bijective fullLayout_6x6_paper.toPermutation :=
+theorem example_6x6_paper_perm_bijectivity :
+    Function.Bijective fullLayout_6x6_paper.toPermutation :=
   fullLayout_6x6_paper.toPermutation.bijective
 
 /-! ### Example 10: Identity GroupBy (no permutation)
