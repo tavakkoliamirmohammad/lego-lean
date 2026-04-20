@@ -43,8 +43,8 @@ theorem tri_succ (k : ℕ) : tri (k + 1) = tri k + k := by
   | zero => simp [tri]
   | succ n =>
     show (n + 2) * (n + 1) / 2 = (n + 1) * n / 2 + (n + 1)
-    have h : (n + 2) * (n + 1) = (n + 1) * n + 2 * (n + 1) := by ring
-    rw [h]; exact Nat.add_mul_div_left _ _ (by omega)
+    rw [show (n + 2) * (n + 1) = (n + 1) * n + 2 * (n + 1) from by ring,
+        Nat.add_mul_div_left _ _ (by omega)]
 
 /-- tri is monotone. -/
 theorem tri_mono {a b : ℕ} (h : a ≤ b) : tri a ≤ tri b := by
@@ -136,15 +136,7 @@ def antiDiagInvRaw (n x : ℕ) : ℕ × ℕ :=
 private theorem tri_le_sq (n : ℕ) (hn : 1 ≤ n) : tri (n + 1) ≤ n * n := by
   have h_eq := two_mul_tri (n + 1)
   simp only [Nat.succ_sub_one] at h_eq
-  -- h_eq : 2 * tri(n+1) = (n+1) * n
-  have h_expand : (n + 1) * n = n * n + n := by ring
-  rw [h_expand] at h_eq
-  -- h_eq : 2 * tri(n+1) = n*n + n
-  have h_nn : n ≤ n * n := by
-    cases n with
-    | zero => simp
-    | succ m => nlinarith
-  omega
+  nlinarith
 
 theorem antiDiagRaw_lt (n i j : ℕ) (hi : i < n) (hj : j < n) :
     antiDiagRaw n i j < n * n := by

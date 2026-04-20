@@ -263,9 +263,7 @@ theorem threadLayout_fullLayout_injective {d q : ℕ}
       (ThreadLayout.ofFullLayout1D cfg fl threadDim hFit defaultIdx).addressMap := by
   intro t₁ t₂ heq
   simp only [ThreadLayout.ofFullLayout1D] at heq
-  have hinj := fl.toEquiv.injective heq
-  have h_eq := congr_fun hinj threadDim
-  simp at h_eq
-  exact Fin.ext h_eq
+  have h := congr_fun (fl.toEquiv.injective heq) threadDim
+  exact Fin.ext (by simpa using h)
 
 end LegoLean
