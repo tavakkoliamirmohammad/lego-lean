@@ -187,10 +187,6 @@ def antiDiagEquiv3 : MultiIndex (![3, 3] : Shape 2) ≃ FlatIndex (![3, 3] : Sha
 def antiDiagGenP (s : Shape 2) : MultiIndex s ≃ FlatIndex s :=
   if h : s = ![3, 3] then h ▸ antiDiagEquiv3 else B s
 
-/-- Wrapping antiDiagGenP as a TilePerm. -/
-def antiDiagTilePerm (s : Shape 2) : TilePerm 2 s :=
-  TilePerm.genP (antiDiagGenP s)
-
 /-! ## Concrete verification -/
 
 def shape3x3 : Shape 2 := ![3, 3]
