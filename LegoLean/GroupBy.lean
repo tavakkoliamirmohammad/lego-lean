@@ -110,10 +110,7 @@ def sigmaPerm (d q : ℕ) : Fin (d * q) ≃ Fin (d * q) :=
 theorem tiling_implies_size {d q : ℕ} {shapes : Fin q → Shape d} {logicalShape : Shape d}
     (hTiling : ∀ i, ∏ k : Fin q, shapes k i = logicalShape i) :
     Shape.prod logicalShape = ∏ k : Fin q, Shape.prod (shapes k) := by
-  simp only [Shape.prod]
-  calc ∏ i : Fin d, logicalShape i
-      = ∏ i : Fin d, ∏ k : Fin q, shapes k i := by congr 1; ext i; exact (hTiling i).symm
-    _ = ∏ k : Fin q, ∏ i : Fin d, shapes k i := Finset.prod_comm
+  simpa only [Shape.prod, ← hTiling] using Finset.prod_comm
 
 /-- The group decomposition: decomposes a logical multi-index into per-level sub-indices.
     MultiIndex logicalShape ≃ (k : Fin q) → MultiIndex (shapes k) -/

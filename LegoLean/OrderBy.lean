@@ -93,7 +93,7 @@ def OrderBy.asFlatPerm {d q : ℕ} (ob : OrderBy d q) :
 theorem OrderBy.plainFlatten_trans_asFlatPerm {d q : ℕ} (ob : OrderBy d q) :
     ∀ mi, ((plainFlatten ob.shapes).trans ob.asFlatPerm) mi = ob.toFlatEquiv mi := by
   intro mi
-  simp [asFlatPerm, Equiv.trans_apply, Equiv.symm_apply_apply]
+  simp [asFlatPerm]
 
 /-- Cast an OrderBy's flat perm to a different (equal) size. -/
 def OrderBy.asFlatPermCast {d q : ℕ} (ob : OrderBy d q) (N : ℕ)

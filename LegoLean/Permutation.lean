@@ -63,8 +63,7 @@ def RegP {d : ℕ} (s : Shape d) (σ : Equiv.Perm (Fin d)) :
 theorem RegP_id {d : ℕ} (s : Shape d) :
     ∀ mi, (RegP s (Equiv.refl (Fin d))) mi = (B s) mi := by
   intro mi
-  unfold RegP reindexEquiv B
-  simp
+  simp [RegP, reindexEquiv, B]
 
 /-- A tile permutation is either a GenP or a RegP.
     This corresponds to the P parameter in OrderBy(dims, P₁, ..., Pq). -/
